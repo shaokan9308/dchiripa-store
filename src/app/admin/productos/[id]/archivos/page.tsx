@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Upload, Trash2, File, Loader2, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, Trash2, File, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 
 interface FileItem {
@@ -18,6 +18,7 @@ interface UploadProgress {
   status: 'uploading' | 'success' | 'error'
   key?: string
   error?: string
+  progress?: number
 }
 
 export default function ProductFilesPage() {
@@ -44,59 +45,67 @@ export default function ProductFilesPage() {
 
   useEffect(() => { fetchFiles() }, [fetchFiles])
 
-  const uploadFile = async (file: File): Promise<string | null> => {
-    if (file.size > 4 * 1024 * 1024) {
-      return null
-    }
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await fetch(`/api/admin/products/${productId}/files`, {
+  const uploadFileDirect = async (file: File): Promise<string | null> => {
+    const presignRes = await fetch('/api/admin/presign', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+      }),
     })
 
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Error al subir')
-    return data.key
+    if (!presignRes.ok) {
+      const err = await presignRes.json()
+      throw new Error(err.error || 'Error al obtener URL de subida')
+    }
+
+    const { key, uploadUrl } = await presignRes.json()
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+    })
+
+    if (!uploadRes.ok) throw new Error('Error al subir a R2')
+
+    const confirmRes = await fetch('/api/admin/confirm-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, key }),
+    })
+
+    if (!confirmRes.ok) throw new Error('Error al confirmar subida')
+
+    return key
   }
 
   const handleFiles = async (fileList: FileList | File[]) => {
     const newUploads: UploadProgress[] = Array.from(fileList).map(file => ({
       file,
       status: 'uploading' as const,
+      progress: 0,
     }))
 
     setUploads(prev => [...prev, ...newUploads])
 
     for (let i = 0; i < newUploads.length; i++) {
       const file = newUploads[i].file
-      
-      if (file.size > 4 * 1024 * 1024) {
-        setUploads(prev => prev.map((u, idx) => 
-          idx === newUploads.length - 1 + i ? { ...u, status: 'error' as const, error: `Archivo muy grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.` } : u
-        ))
-        continue
-      }
+      const uploadIndex = uploads.length + i
 
       try {
-        const key = await uploadFile(file)
-        setUploads(prev => prev.map((u, idx) => {
-          const uploadIndex = prev.indexOf(newUploads[i])
-          if (uploadIndex === idx) {
-            return { ...u, status: 'success' as const, key: key || undefined }
-          }
-          return u
-        }))
+        const key = await uploadFileDirect(file)
+        setUploads(prev => prev.map((u, idx) =>
+          idx === uploadIndex ? { ...u, status: 'success' as const, key: key || undefined, progress: 100 } : u
+        ))
       } catch (err: any) {
-        setUploads(prev => prev.map((u, idx) => {
-          const uploadIndex = prev.indexOf(newUploads[i])
-          if (uploadIndex === idx) {
-            return { ...u, status: 'error' as const, error: err.message }
-          }
-          return u
-        }))
+        setUploads(prev => prev.map((u, idx) =>
+          idx === uploadIndex ? { ...u, status: 'error' as const, error: err.message } : u
+        ))
       }
     }
 
@@ -148,7 +157,8 @@ export default function ProductFilesPage() {
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
   }
 
   const getFileIcon = (key: string) => {
@@ -185,7 +195,7 @@ export default function ProductFilesPage() {
             <Upload className={`h-8 w-8 transition-colors ${isDragOver ? 'text-primary' : 'text-muted-foreground'}`} />
           </div>
           <p className="text-lg font-medium mb-1">
-            {isDragOver ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí'}
+            {isDragOver ? 'Suelta los archivos aqui' : 'Arrastra archivos aqui'}
           </p>
           <p className="text-sm text-muted-foreground mb-4">
             o haz clic para seleccionar
@@ -205,7 +215,7 @@ export default function ProductFilesPage() {
             Seleccionar archivos
           </Button>
           <p className="text-xs text-muted-foreground mt-4">
-            Máximo 4MB por archivo. Formatos soportados: PSD, AI, FIG, PDF, ZIP, etc.
+            Sin limite de tamano. Formatos: PSD, AI, FIG, PDF, ZIP, etc.
           </p>
         </CardContent>
       </Card>
@@ -222,14 +232,14 @@ export default function ProductFilesPage() {
                   key={`${upload.file.name}-${idx}`}
                   className="flex items-center justify-between rounded-lg border p-3"
                 >
-                  <div className="flex items-center gap-3">
-                    <File className={`h-5 w-5 ${upload.status === 'success' ? 'text-green-600' : upload.status === 'error' ? 'text-red-600' : 'text-muted-foreground'}`} />
-                    <div>
-                      <p className="text-sm font-medium">{upload.file.name}</p>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <File className={`h-5 w-5 shrink-0 ${upload.status === 'success' ? 'text-green-600' : upload.status === 'error' ? 'text-red-600' : 'text-muted-foreground'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{upload.file.name}</p>
                       <p className="text-xs text-muted-foreground">{formatSize(upload.file.size)}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {upload.status === 'uploading' && (
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     )}
@@ -272,11 +282,11 @@ export default function ProductFilesPage() {
                   key={file.key}
                   className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <File className={`h-5 w-5 ${getFileIcon(file.key)}`} />
-                    <div>
-                      <p className="text-sm font-medium">{file.key.split('/').pop()}</p>
-                      <p className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <File className={`h-5 w-5 shrink-0 ${getFileIcon(file.key)}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{file.key.split('/').pop()}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {file.key} · {formatSize(file.size)}
                       </p>
                     </div>
@@ -285,7 +295,7 @@ export default function ProductFilesPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(file.key)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
