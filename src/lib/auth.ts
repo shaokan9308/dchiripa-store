@@ -10,7 +10,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
     sendResetPassword: async (user, url) => {
       await sendEmail({
         to: user.email,
@@ -20,19 +20,6 @@ export const auth = betterAuth({
           <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
           <p><a href="${url}">${url}</a></p>
           <p>Este enlace expira en 1 hora.</p>
-        `,
-      })
-    },
-  },
-  emailVerification: {
-    sendVerificationEmail: async (user, url) => {
-      await sendEmail({
-        to: user.email,
-        subject: 'Verifica tu email en Dchiripa Store',
-        html: `
-          <p>Hola ${user.name || 'usuario'},</p>
-          <p>Gracias por registrarte. Verifica tu email haciendo clic aquí:</p>
-          <p><a href="${url}">${url}</a></p>
         `,
       })
     },
