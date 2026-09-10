@@ -40,6 +40,7 @@ export default function ProductFilesPage() {
     if (!file) return
 
     setUploading(true)
+    console.log('[UPLOAD] File:', file.name, 'Size:', file.size, 'Type:', file.type)
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -57,7 +58,8 @@ export default function ProductFilesPage() {
         toast({ title: 'Archivo subido', description: file.name })
         await fetchFiles()
       }
-    } catch {
+    } catch (err) {
+      console.error('[UPLOAD CLIENT ERROR]', err)
       toast({ title: 'Error', description: 'Error de conexión al subir', variant: 'destructive' })
     } finally {
       setUploading(false)

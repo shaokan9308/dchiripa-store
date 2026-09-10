@@ -27,6 +27,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('[FILES POST] Incoming request', request.method, request.url)
   try {
     const { id } = await params
     const formData = await request.formData()
