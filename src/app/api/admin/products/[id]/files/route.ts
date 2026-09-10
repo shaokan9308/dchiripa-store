@@ -4,11 +4,15 @@ import { uploadFile, deleteFile, listFiles } from '@/lib/r2'
 import { NextResponse } from 'next/server'
 
 async function requireAdminSession(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session) return null
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
-  if (user?.role !== 'admin') return null
-  return session
+  try {
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) return null
+    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } })
+    if (currentUser?.role !== 'admin') return null
+    return session
+  } catch {
+    return null
+  }
 }
 
 export async function GET(
@@ -44,8 +48,15 @@ export async function POST(
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
     const { id } = await params
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
+
+    let file: File | null = null
+    try {
+      const formData = await request.formData()
+      file = formData.get('file') as File | null
+    } catch {
+      return NextResponse.json({ error: 'No se pudo leer el FormData' }, { status: 400 })
+    }
+
     if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
 
     const product = await prisma.product.findUnique({ where: { id } })

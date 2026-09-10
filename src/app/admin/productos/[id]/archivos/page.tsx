@@ -31,7 +31,9 @@ export default function ProductFilesPage() {
 
   const fetchFiles = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/products/${productId}/files`)
+      const res = await fetch(`/api/admin/products/${productId}/files`, {
+        credentials: 'include',
+      })
       if (res.ok) {
         const data = await res.json()
         setFiles(data.files || [])
@@ -51,10 +53,18 @@ export default function ProductFilesPage() {
     const res = await fetch(`/api/admin/products/${productId}/files`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     })
 
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Error al subir')
+    const text = await res.text()
+    let data: any
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error(`Error del servidor (${res.status}): ${text.substring(0, 200)}`)
+    }
+
+    if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
     return data.key
   }
 
@@ -119,6 +129,7 @@ export default function ProductFilesPage() {
     try {
       await fetch(`/api/admin/products/${productId}/files?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
       await fetchFiles()
       toast({ title: 'Archivo eliminado' })
