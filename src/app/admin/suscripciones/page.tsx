@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,6 +8,12 @@ import SubscriptionActions from './subscription-actions'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminSubscriptionsPage() {
+  try {
+    await requireAdmin()
+  } catch {
+    redirect('/auth/login')
+  }
+
   const subscriptions = await prisma.subscription.findMany({
     orderBy: { createdAt: 'desc' },
     include: { user: { select: { id: true, name: true, email: true } } },
