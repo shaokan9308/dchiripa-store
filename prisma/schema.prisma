@@ -12,7 +12,7 @@ model User {
   email         String    @unique
   name          String?
   image         String?
-  emailVerified DateTime?
+  emailVerified Boolean  @default(false)
   password      String?
   role          String    @default("user") // user, admin
   createdAt     DateTime  @default(now())
