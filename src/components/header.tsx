@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { Menu, X, ShoppingBag, User, LogOut, LayoutDashboard, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -20,13 +20,12 @@ import { signOutAndRedirect } from '@/lib/sign-out'
 
 export function Header() {
   const pathname = usePathname()
-  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
   const { isAdmin } = useUserRole()
 
   const handleSignOut = () => {
-    signOutAndRedirect(router)
+    signOutAndRedirect()
   }
 
   const navigation = [

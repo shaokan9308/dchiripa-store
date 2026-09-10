@@ -1,8 +1,17 @@
 'use client'
 
-export async function signOutAndRedirect(router: any) {
+import { authClient } from '@/lib/auth-client'
+
+export async function signOutAndRedirect() {
+  // First try the auth client sign out
   try {
-    // Call our custom sign-out endpoint that properly clears cookies
+    await authClient.signOut()
+  } catch {
+    // Ignore errors
+  }
+
+  // Then call our custom endpoint to make sure cookies are cleared
+  try {
     await fetch('/api/auth/signout', {
       method: 'POST',
       credentials: 'include',
@@ -11,6 +20,6 @@ export async function signOutAndRedirect(router: any) {
     // Ignore errors
   }
 
-  // Force full page reload to clear all client state and redirect
-  window.location.href = '/auth/login'
+  // Use hard redirect to clear all client state
+  window.location.replace('/auth/login')
 }

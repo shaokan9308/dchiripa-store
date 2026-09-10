@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Package, CreditCard, Download, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -37,13 +37,12 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { data: session } = authClient.useSession()
   const { isAdmin } = useUserRole()
 
   const handleSignOut = () => {
-    signOutAndRedirect(router)
+    signOutAndRedirect()
   }
 
   return (

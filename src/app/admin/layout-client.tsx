@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Package, Users, CreditCard, Tag, ArrowLeft, Menu, X, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -22,11 +22,10 @@ export default function AdminLayoutClient({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleSignOut = () => {
-    signOutAndRedirect(router)
+    signOutAndRedirect()
   }
 
   return (

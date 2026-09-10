@@ -18,7 +18,6 @@ interface UploadProgress {
   status: 'uploading' | 'success' | 'error'
   key?: string
   error?: string
-  progress?: number
 }
 
 export default function ProductFilesPage() {
@@ -45,50 +44,24 @@ export default function ProductFilesPage() {
 
   useEffect(() => { fetchFiles() }, [fetchFiles])
 
-  const uploadFileDirect = async (file: File): Promise<string | null> => {
-    const presignRes = await fetch('/api/admin/presign', {
+  const uploadFileServer = async (file: File): Promise<string | null> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const res = await fetch(`/api/admin/products/${productId}/files`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId,
-        fileName: file.name,
-        contentType: file.type || 'application/octet-stream',
-      }),
+      body: formData,
     })
 
-    if (!presignRes.ok) {
-      const err = await presignRes.json()
-      throw new Error(err.error || 'Error al obtener URL de subida')
-    }
-
-    const { key, uploadUrl } = await presignRes.json()
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type || 'application/octet-stream',
-      },
-    })
-
-    if (!uploadRes.ok) throw new Error('Error al subir a R2')
-
-    const confirmRes = await fetch('/api/admin/confirm-upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId, key }),
-    })
-
-    if (!confirmRes.ok) throw new Error('Error al confirmar subida')
-
-    return key
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error al subir')
+    return data.key
   }
 
   const handleFiles = async (fileList: FileList | File[]) => {
     const newUploads: UploadProgress[] = Array.from(fileList).map(file => ({
       file,
       status: 'uploading' as const,
-      progress: 0,
     }))
 
     setUploads(prev => [...prev, ...newUploads])
@@ -98,9 +71,9 @@ export default function ProductFilesPage() {
       const uploadIndex = uploads.length + i
 
       try {
-        const key = await uploadFileDirect(file)
+        const key = await uploadFileServer(file)
         setUploads(prev => prev.map((u, idx) =>
-          idx === uploadIndex ? { ...u, status: 'success' as const, key: key || undefined, progress: 100 } : u
+          idx === uploadIndex ? { ...u, status: 'success' as const, key: key || undefined } : u
         ))
       } catch (err: any) {
         setUploads(prev => prev.map((u, idx) =>
@@ -215,7 +188,7 @@ export default function ProductFilesPage() {
             Seleccionar archivos
           </Button>
           <p className="text-xs text-muted-foreground mt-4">
-            Sin limite de tamano. Formatos: PSD, AI, FIG, PDF, ZIP, etc.
+            Formatos: PSD, AI, FIG, PDF, ZIP, etc.
           </p>
         </CardContent>
       </Card>
