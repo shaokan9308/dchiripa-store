@@ -5,36 +5,26 @@ const protectedRoutes = ['/dashboard', '/api/dashboard', '/api/checkout', '/api/
 const adminRoutes = ['/admin', '/api/admin']
 const authRoutes = ['/auth/login', '/auth/register']
 
-async function getSessionFromCookie(headers: Headers): Promise<{ userId: string; role?: string } | null> {
+async function getSession(request: NextRequest): Promise<{ userId: string; role?: string } | null> {
   try {
-    const cookieHeader = headers.get('cookie') || ''
-    const sessionToken = cookieHeader
-      .split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith('better-auth.session_token='))
-      ?.split('=')[1]
-
-    if (!sessionToken) return null
-
-    const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
-    
-    const session = await prisma.session.findFirst({
-      where: { token: sessionToken },
-      include: { user: { select: { role: true } } },
+    const url = new URL('/api/auth/get-session', request.url)
+    const res = await fetch(url, {
+      headers: {
+        cookie: request.headers.get('cookie') || '',
+      },
     })
-    
-    await prisma.$disconnect()
-    
-    if (!session || session.expiresAt < new Date()) return null
-    return { userId: session.userId, role: session.user.role }
+
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data?.session) return null
+    return { userId: data.session.userId, role: data.user?.role }
   } catch {
     return null
   }
 }
 
 export async function middleware(request: NextRequest) {
-  const session = await getSessionFromCookie(request.headers)
+  const session = await getSession(request)
   const { pathname } = request.nextUrl
 
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
@@ -64,14 +54,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/webhooks (Stripe webhooks)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!api/webhooks|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!api/webhooks|api/auth|_next/static|_next/image|favicon.ico|public).*)',
   ],
 }
