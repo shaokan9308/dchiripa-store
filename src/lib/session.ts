@@ -1,20 +1,35 @@
 import { prisma } from './prisma'
-import { cookies } from 'next/headers'
+import { auth } from './auth'
+import { cookies, headers } from 'next/headers'
 
 export async function getSession() {
   try {
     const cookieStore = await cookies()
-    const cookieStr = cookieStore.getAll()
+    const headerStore = await headers()
+    const allCookies = cookieStore.getAll()
+
+    const cookieStr = allCookies
       .map(c => `${c.name}=${c.value}`)
       .join('; ')
 
-    const res = await fetch(`${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/api/auth/get-session`, {
-      headers: { cookie: cookieStr },
-      cache: 'no-store',
-    })
+    const reqHeaders = new Headers()
+    for (const [key, value] of headerStore.entries()) {
+      if (key.toLowerCase() !== 'connection') {
+        reqHeaders.set(key, value)
+      }
+    }
+    if (cookieStr) {
+      reqHeaders.set('cookie', cookieStr)
+    }
 
-    if (!res.ok) return null
-    const data = await res.json()
+    const handler = 'handler' in auth ? auth.handler : auth
+    const response = await handler(new Request('https://dchiripa-store.vercel.app/api/auth/get-session', {
+      method: 'GET',
+      headers: reqHeaders,
+    }))
+
+    if (!response.ok) return null
+    const data = await response.json()
     if (!data?.session) return null
 
     const user = await prisma.user.findUnique({
@@ -24,7 +39,8 @@ export async function getSession() {
 
     if (!user) return null
     return { user }
-  } catch {
+  } catch (e) {
+    console.log('[SESSION] Error:', e)
     return null
   }
 }
