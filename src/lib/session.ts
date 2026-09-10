@@ -13,11 +13,11 @@ export async function getSession() {
       .join('; ')
 
     const reqHeaders = new Headers()
-    for (const [key, value] of headerStore.entries()) {
+    headerStore.forEach((value, key) => {
       if (key.toLowerCase() !== 'connection') {
         reqHeaders.set(key, value)
       }
-    }
+    })
     if (cookieStr) {
       reqHeaders.set('cookie', cookieStr)
     }
