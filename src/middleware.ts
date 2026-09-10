@@ -20,13 +20,13 @@ async function getSessionFromCookie(headers: Headers): Promise<{ userId: string;
     const prisma = new PrismaClient()
     
     const session = await prisma.session.findFirst({
-      where: { sessionToken },
+      where: { token: sessionToken },
       include: { user: { select: { role: true } } },
     })
     
     await prisma.$disconnect()
     
-    if (!session || session.expires < new Date()) return null
+    if (!session || session.expiresAt < new Date()) return null
     return { userId: session.userId, role: session.user.role }
   } catch {
     return null
