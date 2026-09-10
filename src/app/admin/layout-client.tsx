@@ -2,15 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, Users, CreditCard, ArrowLeft, Menu, X, Shield } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LayoutDashboard, Package, Users, CreditCard, Tag, ArrowLeft, Menu, X, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { authClient } from '@/lib/auth-client'
+import { signOutAndRedirect } from '@/lib/sign-out'
 
 const navigation = [
   { name: 'Resumen', href: '/admin', icon: LayoutDashboard },
   { name: 'Productos', href: '/admin/productos', icon: Package },
+  { name: 'Etiquetas', href: '/admin/etiquetas', icon: Tag },
   { name: 'Usuarios', href: '/admin/usuarios', icon: Users },
   { name: 'Suscripciones', href: '/admin/suscripciones', icon: CreditCard },
 ]
@@ -21,7 +22,12 @@ export default function AdminLayoutClient({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const handleSignOut = () => {
+    signOutAndRedirect(router)
+  }
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -82,7 +88,7 @@ export default function AdminLayoutClient({
               variant="ghost"
               className="w-full justify-start gap-3 text-destructive"
               size="sm"
-              onClick={() => authClient.signOut()}
+              onClick={handleSignOut}
             >
               Cerrar sesión
             </Button>

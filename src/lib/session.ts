@@ -2,6 +2,8 @@ import { prisma } from './prisma'
 import { auth } from './auth'
 import { cookies, headers } from 'next/headers'
 
+const AUTH_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3000'
+
 export async function getSession() {
   try {
     const cookieStore = await cookies()
@@ -23,7 +25,7 @@ export async function getSession() {
     }
 
     const handler = 'handler' in auth ? auth.handler : auth
-    const response = await handler(new Request('https://dchiripa-store.vercel.app/api/auth/get-session', {
+    const response = await handler(new Request(`${AUTH_URL}/api/auth/get-session`, {
       method: 'GET',
       headers: reqHeaders,
     }))

@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, X, ShoppingBag, User, LogOut, LayoutDashboard } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Menu, X, ShoppingBag, User, LogOut, LayoutDashboard, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -15,11 +15,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { authClient } from '@/lib/auth-client'
+import { useUserRole } from '@/hooks/use-user-role'
+import { signOutAndRedirect } from '@/lib/sign-out'
 
 export function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
+  const { isAdmin } = useUserRole()
+
+  const handleSignOut = () => {
+    signOutAndRedirect(router)
+  }
 
   const navigation = [
     { name: 'Productos', href: '/productos' },
@@ -91,8 +99,19 @@ export function Header() {
                       Suscripción
                     </Link>
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex w-full items-center px-2 py-1.5 text-sm">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Panel Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => authClient.signOut()} className="text-destructive focus:text-destructive">
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     Cerrar sesión
                   </DropdownMenuItem>
@@ -149,7 +168,16 @@ export function Header() {
                 >
                   Dashboard
                 </Link>
-                <button onClick={() => authClient.signOut()} className="text-left text-base font-medium text-destructive">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="text-base font-medium text-muted-foreground hover:text-primary"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Panel Admin
+                  </Link>
+                )}
+                <button onClick={handleSignOut} className="text-left text-base font-medium text-destructive">
                   Cerrar sesión
                 </button>
               </>

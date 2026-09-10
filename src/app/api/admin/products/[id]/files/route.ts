@@ -1,12 +1,24 @@
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { uploadFile, deleteFile, listFiles } from '@/lib/r2'
 import { NextResponse } from 'next/server'
+
+async function requireAdminSession(request: Request) {
+  const session = await auth.api.getSession({ headers: request.headers })
+  if (!session) return null
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+  if (user?.role !== 'admin') return null
+  return session
+}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await requireAdminSession(request)
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const { id } = await params
     const product = await prisma.product.findUnique({ where: { id }, select: { fileKeys: true } })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -27,8 +39,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[FILES POST] Incoming request', request.method, request.url)
   try {
+    const admin = await requireAdminSession(request)
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const { id } = await params
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -60,6 +74,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await requireAdminSession(request)
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')

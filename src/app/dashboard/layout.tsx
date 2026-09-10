@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, CreditCard, Download, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LayoutDashboard, Package, CreditCard, Download, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -16,6 +16,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { authClient } from '@/lib/auth-client'
+import { useUserRole } from '@/hooks/use-user-role'
+import { signOutAndRedirect } from '@/lib/sign-out'
 
 const navigation = [
   { name: 'Resumen', href: '/dashboard', icon: LayoutDashboard },
@@ -25,14 +27,24 @@ const navigation = [
   { name: 'Configuración', href: '/dashboard/configuracion', icon: Settings },
 ]
 
+const adminNavigation = [
+  { name: 'Panel Admin', href: '/admin', icon: Shield },
+]
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { data: session } = authClient.useSession()
+  const { isAdmin } = useUserRole()
+
+  const handleSignOut = () => {
+    signOutAndRedirect(router)
+  }
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -84,6 +96,29 @@ export default function DashboardLayout({
                 </Link>
               )
             })}
+            {isAdmin && (
+              <>
+                <div className="my-2 border-t" />
+                {adminNavigation.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
           </nav>
 
           <div className="p-4 border-t">
@@ -109,7 +144,7 @@ export default function DashboardLayout({
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => authClient.signOut()} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Cerrar sesión
                 </DropdownMenuItem>

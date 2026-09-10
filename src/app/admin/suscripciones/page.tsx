@@ -3,7 +3,9 @@ import { requireAdmin } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CreditCard, Users, DollarSign, TrendingDown } from 'lucide-react'
 import SubscriptionActions from './subscription-actions'
+import SubscriptionFilters from './subscription-filters'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,11 +21,23 @@ export default async function AdminSubscriptionsPage() {
     include: { user: { select: { id: true, name: true, email: true } } },
   })
 
+  const totalSubscriptions = subscriptions.length
+  const activeSubscriptions = subscriptions.filter(s => s.status === 'active').length
+  const canceledSubscriptions = subscriptions.filter(s => s.status === 'canceled').length
+  const pastDueSubscriptions = subscriptions.filter(s => s.status === 'past_due').length
+
   const statusColors: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    canceled: 'bg-red-100 text-red-800',
-    past_due: 'bg-yellow-100 text-yellow-800',
-    trialing: 'bg-blue-100 text-blue-800',
+    active: 'bg-green-100 text-green-800 border-green-200',
+    canceled: 'bg-red-100 text-red-800 border-red-200',
+    past_due: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    trialing: 'bg-blue-100 text-blue-800 border-blue-200',
+  }
+
+  const statusLabels: Record<string, string> = {
+    active: 'Activa',
+    canceled: 'Cancelada',
+    past_due: 'Pago pendiente',
+    trialing: 'Período de prueba',
   }
 
   return (
@@ -33,42 +47,46 @@ export default async function AdminSubscriptionsPage() {
         <p className="text-muted-foreground">Gestiona las suscripciones de los usuarios.</p>
       </div>
 
-      <div className="grid gap-4">
-        {subscriptions.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No hay suscripciones aún.
-            </CardContent>
-          </Card>
-        ) : (
-          subscriptions.map((sub) => (
-            <Card key={sub.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{sub.user.name || sub.user.email}</CardTitle>
-                  <Badge className={statusColors[sub.status] || ''}>{sub.status}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
-                  <p>Email: {sub.user.email}</p>
-                  <p>Precio ID: {sub.stripePriceId}</p>
-                  <p>Periodo hasta: {new Date(sub.stripeCurrentPeriodEnd).toLocaleDateString('es')}</p>
-                  <p>Cancelar al final: {sub.cancelAtPeriodEnd ? 'Sí' : 'No'}</p>
-                </div>
-                <div className="mt-4">
-                  <SubscriptionActions
-                    subscriptionId={sub.id}
-                    stripeSubscriptionId={sub.stripeSubscriptionId}
-                    status={sub.status}
-                    cancelAtPeriodEnd={sub.cancelAtPeriodEnd}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
+            <CreditCard className="h-5 w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalSubscriptions}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Activas</CardTitle>
+            <Users className="h-5 w-5 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{activeSubscriptions}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Canceladas</CardTitle>
+            <TrendingDown className="h-5 w-5 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600">{canceledSubscriptions}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pago pendiente</CardTitle>
+            <DollarSign className="h-5 w-5 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-yellow-600">{pastDueSubscriptions}</div>
+          </CardContent>
+        </Card>
       </div>
+
+      <SubscriptionFilters subscriptions={subscriptions} statusColors={statusColors} statusLabels={statusLabels} />
     </div>
   )
 }
