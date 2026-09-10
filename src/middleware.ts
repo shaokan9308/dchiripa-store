@@ -17,7 +17,19 @@ async function getSession(request: NextRequest): Promise<{ userId: string; role?
     if (!res.ok) return null
     const data = await res.json()
     if (!data?.session) return null
-    return { userId: data.session.userId, role: data.user?.role }
+
+    const userId = data.session.userId || data.session.user?.id
+    if (!userId) return null
+
+    const { PrismaClient } = await import('@prisma/client')
+    const prisma = new PrismaClient()
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    })
+    await prisma.$disconnect()
+
+    return { userId, role: user?.role }
   } catch {
     return null
   }
