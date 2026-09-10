@@ -39,6 +39,12 @@ export default function ProductFilesPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (file.size > 4 * 1024 * 1024) {
+      toast({ title: 'Error', description: `Archivo muy grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB en Vercel.`, variant: 'destructive' })
+      e.target.value = ''
+      return
+    }
+
     setUploading(true)
     console.log('[UPLOAD] File:', file.name, 'Size:', file.size, 'Type:', file.type)
     try {
@@ -58,9 +64,9 @@ export default function ProductFilesPage() {
         toast({ title: 'Archivo subido', description: file.name })
         await fetchFiles()
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[UPLOAD CLIENT ERROR]', err)
-      toast({ title: 'Error', description: 'Error de conexión al subir', variant: 'destructive' })
+      toast({ title: 'Error', description: `Error: ${err?.message || 'desconocido'}`, variant: 'destructive' })
     } finally {
       setUploading(false)
       e.target.value = ''
