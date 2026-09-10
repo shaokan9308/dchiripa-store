@@ -7,30 +7,37 @@ const authRoutes = ['/auth/login', '/auth/register']
 
 async function getSession(request: NextRequest): Promise<{ userId: string; role?: string } | null> {
   try {
-    const url = new URL('/api/auth/get-session', request.url)
-    const res = await fetch(url, {
-      headers: {
-        cookie: request.headers.get('cookie') || '',
-      },
-    })
-
-    if (!res.ok) return null
-    const data = await res.json()
-    if (!data?.session) return null
-
-    const userId = data.session.userId || data.session.user?.id
-    if (!userId) return null
-
+    const { auth } = await import('@/lib/auth')
     const { PrismaClient } = await import('@prisma/client')
     const prisma = new PrismaClient()
+
+    const cookieHeader = request.headers.get('cookie') || ''
+    const sessionToken = cookieHeader
+      .split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith('better-auth.session_token='))
+      ?.split('=').slice(1).join('=')
+
+    if (!sessionToken) return null
+
+    const session = await prisma.session.findUnique({
+      where: { token: sessionToken },
+      select: { userId: true, expiresAt: true },
+    })
+
+    if (!session || session.expiresAt < new Date()) {
+      await prisma.$disconnect()
+      return null
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: session.userId },
       select: { role: true },
     })
-    await prisma.$disconnect()
 
-    return { userId, role: user?.role }
-  } catch {
+    await prisma.$disconnect()
+    return { userId: session.userId, role: user?.role }
+  } catch (e) {
     return null
   }
 }
