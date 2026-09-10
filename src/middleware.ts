@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const protectedRoutes = ['/dashboard', '/api/dashboard', '/api/checkout', '/api/billing', '/api/download']
+const adminRoutes = ['/admin', '/api/admin']
 const authRoutes = ['/auth/login', '/auth/register']
 
-async function getSessionFromCookie(headers: Headers): Promise<{ userId: string } | null> {
+async function getSessionFromCookie(headers: Headers): Promise<{ userId: string; role?: string } | null> {
   try {
     const cookieHeader = headers.get('cookie') || ''
     const sessionToken = cookieHeader
@@ -20,12 +21,13 @@ async function getSessionFromCookie(headers: Headers): Promise<{ userId: string 
     
     const session = await prisma.session.findFirst({
       where: { sessionToken },
+      include: { user: { select: { role: true } } },
     })
     
     await prisma.$disconnect()
     
     if (!session || session.expires < new Date()) return null
-    return { userId: session.userId }
+    return { userId: session.userId, role: session.user.role }
   } catch {
     return null
   }
@@ -36,12 +38,21 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
+  const isAdmin = adminRoutes.some((route) => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
   if (isProtected && !session) {
     const loginUrl = new URL('/auth/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  if (isAdmin && !session) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  if (isAdmin && session && session.role !== 'admin') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   if (isAuthRoute && session) {
