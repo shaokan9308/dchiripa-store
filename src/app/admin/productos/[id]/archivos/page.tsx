@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Upload, Trash2, File, Loader2 } from 'lucide-react'
+import { toast } from '@/hooks/use-toast'
 
 interface FileItem {
   key: string
@@ -20,12 +21,16 @@ export default function ProductFilesPage() {
   const [uploading, setUploading] = useState(false)
 
   const fetchFiles = useCallback(async () => {
-    const res = await fetch(`/api/admin/products/${productId}/files`)
-    if (res.ok) {
-      const data = await res.json()
-      setFiles(data.files)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/files`)
+      if (res.ok) {
+        const data = await res.json()
+        setFiles(data.files || [])
+      }
+    } catch {
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [productId])
 
   useEffect(() => { fetchFiles() }, [fetchFiles])
@@ -35,25 +40,41 @@ export default function ProductFilesPage() {
     if (!file) return
 
     setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
 
-    await fetch(`/api/admin/products/${productId}/files`, {
-      method: 'POST',
-      body: formData,
-    })
+      const res = await fetch(`/api/admin/products/${productId}/files`, {
+        method: 'POST',
+        body: formData,
+      })
 
-    await fetchFiles()
-    setUploading(false)
-    e.target.value = ''
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast({ title: 'Error', description: data.error || 'No se pudo subir el archivo', variant: 'destructive' })
+      } else {
+        toast({ title: 'Archivo subido', description: file.name })
+        await fetchFiles()
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Error de conexión al subir', variant: 'destructive' })
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   const handleDelete = async (key: string) => {
     if (!confirm('¿Eliminar este archivo?')) return
-    await fetch(`/api/admin/products/${productId}/files?key=${encodeURIComponent(key)}`, {
-      method: 'DELETE',
-    })
-    await fetchFiles()
+    try {
+      await fetch(`/api/admin/products/${productId}/files?key=${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+      })
+      await fetchFiles()
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' })
+    }
   }
 
   const formatSize = (bytes: number) => {
@@ -94,6 +115,7 @@ export default function ProductFilesPage() {
               )}
               Seleccionar archivo
             </Button>
+            {uploading && <span className="text-sm text-muted-foreground">Subiendo...</span>}
           </div>
         </CardContent>
       </Card>
