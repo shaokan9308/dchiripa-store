@@ -1,47 +1,29 @@
 import { prisma } from './prisma'
+import { auth } from './auth'
 import { cookies } from 'next/headers'
 
 export async function getSession() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('better-auth.session_token')?.value
-  
-  if (!token) {
-    console.log('[SESSION] No token found')
-    return null
-  }
-
-  console.log('[SESSION] Token found, length:', token.length)
-
   try {
-    const session = await prisma.session.findUnique({
-      where: { token },
-      select: { userId: true, expiresAt: true },
-    })
+    const cookieStore = await cookies()
+    const cookieStr = cookieStore.getAll()
+      .map(c => `${c.name}=${c.value}`)
+      .join('; ')
 
-    if (!session) {
-      console.log('[SESSION] No session in DB for token')
-      return null
-    }
+    const headers = new Headers()
+    headers.set('cookie', cookieStr)
 
-    if (session.expiresAt < new Date()) {
-      console.log('[SESSION] Session expired')
-      return null
-    }
+    const session = await auth.api.getSession({ headers } as any)
+
+    if (!session) return null
 
     const user = await prisma.user.findUnique({
-      where: { id: session.userId },
+      where: { id: session.user.id },
       select: { id: true, email: true, name: true, role: true },
     })
 
-    if (!user) {
-      console.log('[SESSION] User not found')
-      return null
-    }
-
-    console.log('[SESSION] User found:', user.email, 'role:', user.role)
-    return { session, user }
-  } catch (e) {
-    console.log('[SESSION] Error:', e)
+    if (!user) return null
+    return { user }
+  } catch {
     return null
   }
 }
