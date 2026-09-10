@@ -1,5 +1,4 @@
 import { prisma } from './prisma'
-import { auth } from './auth'
 import { cookies } from 'next/headers'
 
 export async function getSession() {
@@ -9,15 +8,17 @@ export async function getSession() {
       .map(c => `${c.name}=${c.value}`)
       .join('; ')
 
-    const headers = new Headers()
-    headers.set('cookie', cookieStr)
+    const res = await fetch(`${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/api/auth/get-session`, {
+      headers: { cookie: cookieStr },
+      cache: 'no-store',
+    })
 
-    const session = await auth.api.getSession({ headers } as any)
-
-    if (!session) return null
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data?.session) return null
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: data.session.userId || data.session.user?.id },
       select: { id: true, email: true, name: true, role: true },
     })
 
