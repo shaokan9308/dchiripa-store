@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingBag, Download, Star } from 'lucide-react'
 import { useState } from 'react'
@@ -70,12 +69,10 @@ export function ProductCard({ product }: ProductCardProps) {
     <Card className="flex flex-col h-full group">
       <Link href={`/productos/${product.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden rounded-t-lg">
-          <Image
+          <img
             src={imageUrl}
             alt={product.name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {product.tags.length > 0 && (
             <div className="absolute top-2 left-2 flex flex-wrap gap-1">

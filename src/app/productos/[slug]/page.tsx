@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { Download, Check, Star, FileCode, Layers, Archive } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -142,13 +141,10 @@ export default function ProductDetailPage() {
           {/* Gallery */}
           <div className="space-y-4">
             <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-              <Image
+              <img
                 src={product.images[0] || '/placeholder-product.jpg'}
                 alt={product.name}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
             {product.images.length > 1 && (
@@ -159,7 +155,7 @@ export default function ProductDetailPage() {
                     className="relative h-20 w-20 flex-shrink-0 rounded overflow-hidden border-2 transition-colors"
                     style={{ borderColor: i === 0 ? 'hsl(var(--primary))' : 'transparent' }}
                   >
-                    <Image src={img} alt={`${product.name} ${i + 1}`} fill className="object-cover" sizes="80px" />
+                    <img src={img} alt={`${product.name} ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
