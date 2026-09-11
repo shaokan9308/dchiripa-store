@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { Download, Check, Star, FileCode, Layers, Archive } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,30 +13,60 @@ import { authClient } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
 
+interface Product {
+  id: string
+  name: string
+  slug: string
+  description: string
+  price: number
+  currency: string
+  images: string[]
+  tags: string[]
+  fileKeys: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export default function ProductDetailPage() {
   const params = useParams()
   const slug = params.slug as string
   const router = useRouter()
   const { data: session } = authClient.useSession()
-  const [product, setProduct] = useState<any>(null)
+  const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [buying, setBuying] = useState(false)
+  const [hasAccess, setHasAccess] = useState(false)
 
-  // Fetch product on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchProduct = async () => {
-    try {
-      const res = await fetch(`/api/products/${slug}`)
-      if (res.ok) {
-        const data = await res.json()
-        setProduct(data.product)
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`/api/products/${slug}`)
+        if (res.ok) {
+          const data = await res.json()
+          setProduct(data.product)
+        }
+      } catch {
+        toast({ title: 'Error', description: 'No se pudo cargar el producto', variant: 'destructive' })
+      } finally {
+        setLoading(false)
       }
-    } catch {
-      toast({ title: 'Error', description: 'No se pudo cargar el producto', variant: 'destructive' })
-    } finally {
-      setLoading(false)
     }
-  }
+    fetchProduct()
+  }, [slug])
+
+  useEffect(() => {
+    if (!session || !product) return
+    const checkAccess = async () => {
+      try {
+        const res = await fetch(`/api/download/${product.id}`, { method: 'HEAD' })
+        setHasAccess(res.ok)
+      } catch {
+        setHasAccess(false)
+      }
+    }
+    checkAccess()
+  }, [session, product])
 
   if (loading) {
     return <ProductSkeleton />
@@ -66,7 +96,6 @@ export default function ProductDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          priceId: `price_${product.id}`,
           mode: 'payment',
         }),
       })
@@ -96,8 +125,6 @@ export default function ProductDetailPage() {
       toast({ title: 'Error', description: 'Error al descargar', variant: 'destructive' })
     }
   }
-
-  const canDownload = session && product // In real app, check purchase/subscription
 
   return (
     <div className="py-12">
@@ -158,11 +185,6 @@ export default function ProductDetailPage() {
               <span className="text-muted-foreground">Compra única</span>
             </div>
 
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span>4.9 (127 reseñas)</span>
-            </div>
-
             <Separator />
 
             <div>
@@ -186,7 +208,7 @@ export default function ProductDetailPage() {
             <Separator />
 
             <div className="space-y-3">
-              {canDownload ? (
+              {hasAccess ? (
                 <Button className="w-full" size="lg" onClick={handleDownload}>
                   <Download className="mr-2 h-5 w-5" />
                   Descargar archivo
@@ -199,7 +221,9 @@ export default function ProductDetailPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 {session
-                  ? 'La descarga estará disponible en tu dashboard tras la compra'
+                  ? hasAccess
+                    ? 'Ya tienes acceso a este archivo'
+                    : 'La descarga estará disponible en tu dashboard tras la compra'
                   : 'Inicia sesión para comprar y descargar'}
               </p>
             </div>
@@ -215,7 +239,7 @@ export default function ProductDetailPage() {
   )
 }
 
-function ProductDetailsTabs({ product }: { product: any }) {
+function ProductDetailsTabs({ product }: { product: Product }) {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Detalles del producto</h2>

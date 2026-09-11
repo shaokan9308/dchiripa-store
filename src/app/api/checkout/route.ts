@@ -4,45 +4,55 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-  }
+  try {
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
 
-  const { priceId, productId, mode } = await request.json()
+    const { productId, mode } = await request.json()
 
-  if (!priceId) {
-    return NextResponse.json({ error: 'priceId requerido' }, { status: 400 })
-  }
+    let priceId: string | undefined
+    if (mode === 'subscription') {
+      priceId = process.env.STRIPE_PRICE_MONTHLY
+    }
 
-  let customerId: string | undefined
-  let customerEmail: string | undefined
+    if (!priceId && mode !== 'subscription') {
+      return NextResponse.json({ error: 'priceId requerido para compras individuales' }, { status: 400 })
+    }
 
-  const subscription = await prisma.subscription.findFirst({
-    where: { userId: session.user.id },
-  })
+    let customerId: string | undefined
+    let customerEmail: string | undefined
 
-  if (subscription?.stripeCustomerId) {
-    customerId = subscription.stripeCustomerId
-  } else {
-    customerEmail = session.user.email
-  }
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId: session.user.id },
+    })
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL!
+    if (subscription?.stripeCustomerId) {
+      customerId = subscription.stripeCustomerId
+    } else {
+      customerEmail = session.user.email
+    }
 
-  const stripeSession = await getStripeSession({
-    customerId,
-    customerEmail,
-    priceId,
-    successUrl: `${baseUrl}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancelUrl: `${baseUrl}/dashboard?canceled=true`,
-    metadata: {
-      userId: session.user.id,
-      productId: productId || '',
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL!
+
+    const stripeSession = await getStripeSession({
+      customerId,
+      customerEmail,
+      priceId: priceId!,
+      successUrl: `${baseUrl}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${baseUrl}/dashboard?canceled=true`,
+      metadata: {
+        userId: session.user.id,
+        productId: productId || '',
+        mode: mode || 'subscription',
+      },
       mode: mode || 'subscription',
-    },
-    mode: mode || 'subscription',
-  })
+    })
 
-  return NextResponse.json({ url: stripeSession.url })
+    return NextResponse.json({ url: stripeSession.url })
+  } catch (error) {
+    console.error('[CHECKOUT]', error)
+    return NextResponse.json({ error: 'Error al crear sesion de pago' }, { status: 500 })
+  }
 }

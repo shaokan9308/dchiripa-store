@@ -8,28 +8,29 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
 
-  const [purchases, downloads, subscription] = await Promise.all([
-    prisma.purchase.findMany({
-      where: { userId: session.user.id, status: 'completed' },
-      orderBy: { createdAt: 'desc' },
-      include: { product: true },
+  const userId = session.user.id
+
+  const [purchasesCount, downloadsCount, spentResult, subscription] = await Promise.all([
+    prisma.purchase.count({
+      where: { userId, status: 'completed' },
     }),
-    prisma.download.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: 'desc' },
-      include: { product: true },
+    prisma.download.count({
+      where: { userId },
+    }),
+    prisma.purchase.aggregate({
+      where: { userId, status: 'completed' },
+      _sum: { amount: true },
     }),
     prisma.subscription.findFirst({
-      where: { userId: session.user.id },
+      where: { userId },
+      select: { status: true },
     }),
   ])
 
-  const spent = purchases.reduce((sum, p) => sum + p.amount, 0)
-
   return NextResponse.json({
-    purchases: purchases.length,
-    downloads: downloads.length,
+    purchases: purchasesCount,
+    downloads: downloadsCount,
     subscription: subscription?.status || null,
-    spent,
+    spent: spentResult._sum.amount || 0,
   })
 }

@@ -37,7 +37,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <footer className="border-t py-8 px-4">
             <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
-              <p>© 2024 Dchiripa Store. Todos los derechos reservados.</p>
+              <p>© {new Date().getFullYear()} Dchiripa Store. Todos los derechos reservados.</p>
             </div>
           </footer>
         </Providers>

@@ -1,4 +1,4 @@
-import { constructStripeEvent } from '@/lib/stripe'
+import { constructStripeEvent, stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendPurchaseConfirmationEmail, sendSubscriptionConfirmationEmail } from '@/lib/email'
 import { NextResponse } from 'next/server'
@@ -6,7 +6,11 @@ import Stripe from 'stripe'
 
 export async function POST(request: Request) {
   const body = await request.text()
-  const signature = request.headers.get('stripe-signature')!
+  const signature = request.headers.get('stripe-signature')
+
+  if (!signature) {
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
+  }
 
   let event: Stripe.Event
 
@@ -49,6 +53,12 @@ export async function POST(request: Request) {
   }
 }
 
+function getPlanName(priceId: string): string {
+  if (priceId === process.env.STRIPE_PRICE_MONTHLY) return 'Plan Mensual'
+  if (priceId === process.env.STRIPE_PRICE_YEARLY) return 'Plan Anual'
+  return 'Plan Premium'
+}
+
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const { userId, productId, mode } = session.metadata || {}
 
@@ -56,26 +66,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (mode === 'subscription') {
     const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+    const priceId = subscription.items.data[0].price.id
+    const planName = getPlanName(priceId)
+
     await prisma.subscription.upsert({
       where: { userId },
       create: {
         userId,
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: subscription.id,
-        stripePriceId: subscription.items.data[0].price.id,
+        stripePriceId: priceId,
         stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
         status: subscription.status,
       },
       update: {
         stripeSubscriptionId: subscription.id,
-        stripePriceId: subscription.items.data[0].price.id,
+        stripePriceId: priceId,
         stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
         status: subscription.status,
       },
     })
 
-    const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`
-    await sendSubscriptionConfirmationEmail(userId, 'Plan Mensual', portalUrl)
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+    if (user?.email) {
+      const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/suscripcion`
+      await sendSubscriptionConfirmationEmail(user.email, planName, portalUrl)
+    }
   } else if (mode === 'payment' && productId) {
     const purchase = await prisma.purchase.create({
       data: {
@@ -89,8 +105,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       include: { product: true },
     })
 
-    const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/download/${productId}`
-    await sendPurchaseConfirmationEmail(userId, purchase.product.name, downloadUrl)
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+    if (user?.email) {
+      const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/download/${productId}`
+      await sendPurchaseConfirmationEmail(user.email, purchase.product.name, downloadUrl)
+    }
   }
 }
 
@@ -120,7 +139,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  const subscription = await prisma.subscription.findUnique({
+  const subscription = await prisma.subscription.findFirst({
     where: { stripeCustomerId: invoice.customer as string },
   })
 
@@ -131,5 +150,3 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     })
   }
 }
-
-import { stripe } from '@/lib/stripe'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown, Search, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,9 +12,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ProductCard } from '@/components/product-card'
-import { formatPrice } from '@/lib/utils'
-
-export const dynamic = 'force-dynamic'
 
 const categories = [
   'UI Kits',
@@ -136,6 +133,20 @@ export default function ProductsClient() {
   )
 }
 
+interface Product {
+  id: string
+  name: string
+  slug: string
+  description: string
+  price: number
+  currency: string
+  images: string[]
+  tags: string[]
+  fileKeys: string[]
+  isActive: boolean
+  createdAt: string
+}
+
 function ProductsList({
   search,
   category,
@@ -149,30 +160,36 @@ function ProductsList({
   page: number
   setPage: (page: number) => void
 }) {
-  const [products, setProducts] = useState<any[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [totalPages, setTotalPages] = useState(1)
 
-  const fetchProducts = async () => {
-    setLoading(true)
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: '12',
-      ...(search && { search }),
-      ...(category && { category }),
-      ...(sort && { sort }),
-    })
-    const res = await fetch(`/api/products?${params}`)
-    const data = await res.json()
-    setProducts(data.products)
-    setTotalPages(data.pagination.totalPages)
-    setLoading(false)
-  }
-
-  const key = `${search}-${category}-${sort}-${page}`
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: '12',
+          ...(search && { search }),
+          ...(category && { category }),
+          ...(sort && { sort }),
+        })
+        const res = await fetch(`/api/products?${params}`)
+        const data = await res.json()
+        setProducts(data.products || [])
+        setTotalPages(data.pagination?.totalPages || 1)
+      } catch {
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [search, category, sort, page])
 
   return (
-    <div key={key}>
+    <div>
       {loading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
