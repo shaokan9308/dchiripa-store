@@ -20,6 +20,7 @@ interface Product {
   fileKeys: string[]
   tags: string[]
   isActive: boolean
+  accessType: string
 }
 
 interface UploadState {
@@ -44,6 +45,7 @@ export default function ProductForm({ product }: { product?: Product }) {
     images: product?.images || [],
     tags: product?.tags.join(', ') || '',
     isActive: product?.isActive ?? true,
+    accessType: product?.accessType || 'purchase',
   })
 
   const uploadImage = useCallback(async (upload: UploadState): Promise<string | null> => {
@@ -244,6 +246,35 @@ export default function ProductForm({ product }: { product?: Product }) {
               onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Tipo de acceso</Label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, accessType: 'purchase' }))}
+                className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                  form.accessType === 'purchase'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted hover:border-muted-foreground/50'
+                }`}
+              >
+                <p className="font-medium">Compra individual</p>
+                <p className="text-xs text-muted-foreground mt-1">El usuario paga por este producto</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, accessType: 'subscription' }))}
+                className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                  form.accessType === 'subscription'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted hover:border-muted-foreground/50'
+                }`}
+              >
+                <p className="font-medium">Suscripcion</p>
+                <p className="text-xs text-muted-foreground mt-1">Acceso con suscripcion activa</p>
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>

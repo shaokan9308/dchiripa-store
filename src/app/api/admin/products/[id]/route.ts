@@ -26,6 +26,7 @@ export async function PATCH(
         images: body.images,
         tags: body.tags,
         isActive: body.isActive,
+        accessType: body.accessType || 'purchase',
       },
     })
 

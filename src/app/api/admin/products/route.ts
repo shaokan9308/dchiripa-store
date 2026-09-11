@@ -21,6 +21,7 @@ export async function POST(request: Request) {
         images: body.images || [],
         tags: body.tags || [],
         isActive: body.isActive ?? true,
+        accessType: body.accessType || 'purchase',
       },
     })
 

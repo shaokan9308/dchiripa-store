@@ -23,6 +23,7 @@ interface Product {
   tags: string[]
   fileKeys: string[]
   isActive: boolean
+  accessType: string
   createdAt: string
   updatedAt: string
 }
@@ -36,6 +37,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [buying, setBuying] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
+  const [hasSubscription, setHasSubscription] = useState(false)
   const [currentImage, setCurrentImage] = useState(0)
   const [paused, setPaused] = useState(false)
 
@@ -67,6 +69,17 @@ export default function ProductDetailPage() {
       }
     }
     checkAccess()
+  }, [session, product])
+
+  useEffect(() => {
+    if (!session || product?.accessType !== 'subscription') return
+    fetch('/api/dashboard/subscription')
+      .then(r => r.json())
+      .then(data => {
+        const sub = data.subscription
+        setHasSubscription(sub && ['active', 'trialing'].includes(sub.status))
+      })
+      .catch(() => {})
   }, [session, product])
 
   const totalImages = product?.images.length || 0
@@ -106,6 +119,15 @@ export default function ProductDetailPage() {
       return
     }
 
+    if (product.accessType === 'subscription') {
+      if (hasSubscription) {
+        window.location.href = `/api/download/${product.id}`
+      } else {
+        router.push('/dashboard/suscripcion')
+      }
+      return
+    }
+
     setBuying(true)
     try {
       const res = await fetch('/api/checkout', {
@@ -124,7 +146,7 @@ export default function ProductDetailPage() {
         toast({ title: 'Error', description: data.error || 'No se pudo iniciar el pago', variant: 'destructive' })
       }
     } catch {
-      toast({ title: 'Error', description: 'Error de conexión', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setBuying(false)
     }
@@ -233,8 +255,16 @@ export default function ProductDetailPage() {
             <Separator />
 
             <div className="flex items-baseline gap-4">
-              <span className="text-3xl font-bold">{formatPrice(product.price, product.currency)}</span>
-              <span className="text-muted-foreground">Compra única</span>
+              {product.accessType === 'subscription' ? (
+                <>
+                  <span className="text-xl font-bold text-primary">Acceso con suscripcion</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">{formatPrice(product.price, product.currency)}</span>
+                  <span className="text-muted-foreground">Compra unica</span>
+                </>
+              )}
             </div>
 
             <Separator />
@@ -260,10 +290,14 @@ export default function ProductDetailPage() {
             <Separator />
 
             <div className="space-y-3">
-              {hasAccess ? (
-                <Button className="w-full" size="lg" onClick={handleDownload}>
+              {hasAccess || (product.accessType === 'subscription' && hasSubscription) ? (
+                <Button className="w-full" size="lg" onClick={() => window.location.href = `/api/download/${product.id}`}>
                   <Download className="mr-2 h-5 w-5" />
                   Descargar archivo
+                </Button>
+              ) : product.accessType === 'subscription' ? (
+                <Button className="w-full" size="lg" onClick={handlePurchase}>
+                  Suscribirse para descargar
                 </Button>
               ) : (
                 <Button className="w-full" size="lg" onClick={handlePurchase} disabled={buying}>
@@ -273,10 +307,12 @@ export default function ProductDetailPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 {session
-                  ? hasAccess
+                  ? hasAccess || (product.accessType === 'subscription' && hasSubscription)
                     ? 'Ya tienes acceso a este archivo'
-                    : 'La descarga estará disponible en tu dashboard tras la compra'
-                  : 'Inicia sesión para comprar y descargar'}
+                    : product.accessType === 'subscription'
+                      ? 'Necesitas una suscripcion activa para descargar'
+                      : 'La descarga estara disponible en tu dashboard tras la compra'
+                  : 'Inicia sesion para comprar y descargar'}
               </p>
             </div>
           </div>

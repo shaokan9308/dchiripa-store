@@ -84,6 +84,7 @@ model Product {
   fileKeys    String[]
   tags        String[]
   isActive    Boolean  @default(true)
+  accessType  String   @default("purchase")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

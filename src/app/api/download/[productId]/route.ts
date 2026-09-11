@@ -76,19 +76,23 @@ export async function GET(
 }
 
 async function checkAccess(userId: string, productId: string): Promise<boolean> {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { accessType: true },
+  })
+
+  if (!product) return false
+
+  if (product.accessType === 'subscription') {
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId },
+    })
+    return !!subscription && ['active', 'trialing'].includes(subscription.status)
+  }
+
   const purchase = await prisma.purchase.findFirst({
     where: { userId, productId, status: 'completed' },
   })
 
-  if (purchase) return true
-
-  const subscription = await prisma.subscription.findFirst({
-    where: { userId },
-  })
-
-  if (subscription && ['active', 'trialing'].includes(subscription.status)) {
-    return true
-  }
-
-  return false
+  return !!purchase
 }
