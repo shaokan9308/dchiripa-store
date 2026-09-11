@@ -114,7 +114,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
-  const userSubscription = await prisma.subscription.findUnique({
+  const userSubscription = await prisma.subscription.findFirst({
     where: { stripeSubscriptionId: subscription.id },
   })
 

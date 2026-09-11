@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CreditCard, Check, X, Loader2, Shield, Download, Infinity, ArrowUpRight } from 'lucide-react'
+import { CreditCard, Check, X, Loader2, Shield, Download, Infinity, ArrowUpRight, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,10 +12,19 @@ import Link from 'next/link'
 interface Subscription {
   id: string
   status: string
-  stripePriceId: string
+  stripePriceId: string | null
   stripeCurrentPeriodEnd: string
   cancelAtPeriodEnd: boolean
+  isManual?: boolean
   stripeData?: any
+}
+
+interface Countdown {
+  days: number
+  hours: number
+  minutes: number
+  seconds: number
+  total: number
 }
 
 const PLANS = {
@@ -48,6 +57,7 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [managing, setManaging] = useState(false)
+  const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 })
 
   const fetchSubscription = async () => {
     try {
@@ -66,6 +76,33 @@ export default function SubscriptionPage() {
   useEffect(() => {
     fetchSubscription()
   }, [])
+
+  useEffect(() => {
+    if (!subscription || !['active', 'trialing'].includes(subscription.status)) return
+
+    const calculateCountdown = () => {
+      const now = new Date().getTime()
+      const end = new Date(subscription.stripeCurrentPeriodEnd).getTime()
+      const diff = end - now
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 })
+        return
+      }
+
+      setCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+        total: diff,
+      })
+    }
+
+    calculateCountdown()
+    const interval = setInterval(calculateCountdown, 1000)
+    return () => clearInterval(interval)
+  }, [subscription])
 
   const handleManageSubscription = async () => {
     setManaging(true)
@@ -139,11 +176,37 @@ export default function SubscriptionPage() {
         <CardContent className="pt-0">
           {isActive && subscription && (
             <div className="space-y-4">
+              {/* Countdown Timer */}
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                <Clock className="h-6 w-6 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Tiempo restante</p>
+                  <div className="flex gap-4 mt-1">
+                    {[
+                      { value: countdown.days, label: 'dias' },
+                      { value: countdown.hours, label: 'horas' },
+                      { value: countdown.minutes, label: 'min' },
+                      { value: countdown.seconds, label: 'seg' },
+                    ].map(({ value, label }) => (
+                      <div key={label} className="text-center">
+                        <span className="text-2xl font-bold tabular-nums">{String(value).padStart(2, '0')}</span>
+                        <span className="block text-xs text-muted-foreground">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {subscription.isManual && (
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                    Manual
+                  </Badge>
+                )}
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="p-4 rounded-lg bg-muted">
                   <p className="text-sm text-muted-foreground">Plan actual</p>
                   <p className="font-semibold">
-                    {subscription.stripePriceId.includes('yearly') ? 'Anual' : 'Mensual'}
+                    {subscription.isManual ? 'Manual' : subscription.stripePriceId?.includes('yearly') ? 'Anual' : 'Mensual'}
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
@@ -151,12 +214,12 @@ export default function SubscriptionPage() {
                   <p className="font-semibold">{formatDate(subscription.stripeCurrentPeriodEnd)}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
-                  <p className="text-sm text-muted-foreground">Método de pago</p>
+                  <p className="text-sm text-muted-foreground">Metodo de pago</p>
                   <p className="font-semibold">
-                    {subscription.stripeData?.default_payment_method?.card?.brand || 'Tarjeta'}
+                    {subscription.isManual ? 'Activo manualmente' : subscription.stripeData?.default_payment_method?.card?.brand || 'Tarjeta'}
                     {' '}
-                    {subscription.stripeData?.default_payment_method?.card?.last4 && (
-                      <span>•••• {subscription.stripeData.default_payment_method.card.last4}</span>
+                    {!subscription.isManual && subscription.stripeData?.default_payment_method?.card?.last4 && (
+                      <span>---- {subscription.stripeData.default_payment_method.card.last4}</span>
                     )}
                   </p>
                 </div>
@@ -165,10 +228,12 @@ export default function SubscriptionPage() {
               <Separator />
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="outline" onClick={handleManageSubscription} disabled={managing}>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Gestionar en Stripe
-                </Button>
+                {!subscription.isManual && (
+                  <Button variant="outline" onClick={handleManageSubscription} disabled={managing}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Gestionar en Stripe
+                  </Button>
+                )}
                 {willCancel && (
                   <Button variant="secondary" onClick={handleManageSubscription} disabled={managing}>
                     <ArrowUpRight className="mr-2 h-4 w-4" />

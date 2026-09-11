@@ -3,9 +3,10 @@ import { requireAdmin } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CreditCard, Users, DollarSign, TrendingDown } from 'lucide-react'
+import { CreditCard, Users, DollarSign, TrendingDown, Clock } from 'lucide-react'
 import SubscriptionActions from './subscription-actions'
 import SubscriptionFilters from './subscription-filters'
+import ManualSubscriptionForm from './manual-subscription-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,7 @@ export default async function AdminSubscriptionsPage() {
   const activeSubscriptions = subscriptions.filter(s => s.status === 'active').length
   const canceledSubscriptions = subscriptions.filter(s => s.status === 'canceled').length
   const pastDueSubscriptions = subscriptions.filter(s => s.status === 'past_due').length
+  const manualSubscriptions = subscriptions.filter(s => s.isManual).length
 
   const statusColors: Record<string, string> = {
     active: 'bg-green-100 text-green-800 border-green-200',
@@ -84,7 +86,18 @@ export default async function AdminSubscriptionsPage() {
             <div className="text-3xl font-bold text-yellow-600">{pastDueSubscriptions}</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Manuales</CardTitle>
+            <Clock className="h-5 w-5 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{manualSubscriptions}</div>
+          </CardContent>
+        </Card>
       </div>
+
+      <ManualSubscriptionForm />
 
       <SubscriptionFilters subscriptions={subscriptions} statusColors={statusColors} statusLabels={statusLabels} />
     </div>

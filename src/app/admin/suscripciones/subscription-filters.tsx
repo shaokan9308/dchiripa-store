@@ -5,16 +5,17 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Search, X, CreditCard } from 'lucide-react'
+import { Search, X, CreditCard, Clock } from 'lucide-react'
 import SubscriptionActions from './subscription-actions'
 
 interface Subscription {
   id: string
-  stripeSubscriptionId: string
-  stripePriceId: string
+  stripeSubscriptionId: string | null
+  stripePriceId: string | null
   stripeCurrentPeriodEnd: Date
   status: string
   cancelAtPeriodEnd: boolean
+  isManual: boolean
   createdAt: Date
   user: { id: string; name: string | null; email: string }
 }
@@ -36,7 +37,8 @@ export default function SubscriptionFilters({ subscriptions, statusColors, statu
       const matchesSearch = search === '' ||
         sub.user.name?.toLowerCase().includes(search.toLowerCase()) ||
         sub.user.email.toLowerCase().includes(search.toLowerCase()) ||
-        sub.stripePriceId.toLowerCase().includes(search.toLowerCase())
+        sub.stripePriceId?.toLowerCase().includes(search.toLowerCase()) ||
+        false
       
       const matchesStatus = statusFilter === null || sub.status === statusFilter
 
@@ -50,6 +52,27 @@ export default function SubscriptionFilters({ subscriptions, statusColors, statu
       month: 'short',
       year: 'numeric',
     })
+  }
+
+  const getCountdown = (endDate: Date) => {
+    const now = new Date()
+    const end = new Date(endDate)
+    const diff = end.getTime() - now.getTime()
+
+    if (diff <= 0) return { text: 'Expirada', urgent: true }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+    if (days > 30) {
+      const months = Math.floor(days / 30)
+      const remDays = days % 30
+      return { text: `${months}m ${remDays}d restantes`, urgent: false }
+    }
+    if (days > 0) return { text: `${days}d ${hours}h restantes`, urgent: days <= 3 }
+    if (hours > 0) return { text: `${hours}h ${minutes}m restantes`, urgent: true }
+    return { text: `${minutes}m restantes`, urgent: true }
   }
 
   return (
@@ -104,46 +127,60 @@ export default function SubscriptionFilters({ subscriptions, statusColors, statu
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filtered.map((sub) => (
-            <Card key={sub.id} className="transition-colors hover:bg-accent/50">
-              <CardContent className="p-4">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <CreditCard className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{sub.user.name || 'Sin nombre'}</p>
-                        <Badge variant="outline" className={`text-xs ${statusColors[sub.status] || ''}`}>
-                          {statusLabels[sub.status] || sub.status}
-                        </Badge>
-                        {sub.cancelAtPeriodEnd && (
-                          <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
-                            Se cancela al finalizar
+          {filtered.map((sub) => {
+            const countdown = getCountdown(sub.stripeCurrentPeriodEnd)
+            return (
+              <Card key={sub.id} className="transition-colors hover:bg-accent/50">
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{sub.user.name || 'Sin nombre'}</p>
+                          <Badge variant="outline" className={`text-xs ${statusColors[sub.status] || ''}`}>
+                            {statusLabels[sub.status] || sub.status}
                           </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{sub.user.email}</p>
-                      <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span>ID: {sub.stripePriceId}</span>
-                        <span>·</span>
-                        <span>Fin del período: {formatDate(sub.stripeCurrentPeriodEnd)}</span>
+                          {sub.isManual && (
+                            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                              Manual
+                            </Badge>
+                          )}
+                          {sub.cancelAtPeriodEnd && (
+                            <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
+                              Se cancela al finalizar
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{sub.user.email}</p>
+                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                          {sub.stripePriceId && <span>ID: {sub.stripePriceId}</span>}
+                          <span>Fin: {formatDate(sub.stripeCurrentPeriodEnd)}</span>
+                          {sub.status === 'active' && (
+                            <span className={`flex items-center gap-1 font-medium ${countdown.urgent ? 'text-red-600' : 'text-green-600'}`}>
+                              <Clock className="h-3 w-3" />
+                              {countdown.text}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 md:ml-4">
+                      <SubscriptionActions
+                        subscriptionId={sub.id}
+                        stripeSubscriptionId={sub.stripeSubscriptionId}
+                        status={sub.status}
+                        cancelAtPeriodEnd={sub.cancelAtPeriodEnd}
+                        isManual={sub.isManual}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 md:ml-4">
-                    <SubscriptionActions
-                      subscriptionId={sub.id}
-                      stripeSubscriptionId={sub.stripeSubscriptionId}
-                      status={sub.status}
-                      cancelAtPeriodEnd={sub.cancelAtPeriodEnd}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

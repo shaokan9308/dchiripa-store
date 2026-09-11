@@ -1,0 +1,1 @@
+ALTER TABLE "Subscription" ALTER COLUMN "stripeCustomerId" DROP NOT NULL; ALTER TABLE "Subscription" ALTER COLUMN "stripeSubscriptionId" DROP NOT NULL; ALTER TABLE "Subscription" ALTER COLUMN "stripePriceId" DROP NOT NULL; ALTER TABLE "Subscription" ADD COLUMN "isManual" BOOLEAN NOT NULL DEFAULT false;
