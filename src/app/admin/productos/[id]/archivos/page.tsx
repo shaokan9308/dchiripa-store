@@ -46,26 +46,61 @@ export default function ProductFilesPage() {
 
   useEffect(() => { fetchFiles() }, [fetchFiles])
 
-  const uploadFileServer = async (file: File): Promise<string | null> => {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await fetch(`/api/admin/products/${productId}/files`, {
+  const uploadFileDirect = async (file: File): Promise<string | null> => {
+    // 1. Get presigned URL
+    const presignRes = await fetch('/api/admin/presign', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
+      body: JSON.stringify({
+        productId,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+      }),
     })
 
-    const text = await res.text()
-    let data: any
+    const presignText = await presignRes.text()
+    let presignData: any
     try {
-      data = JSON.parse(text)
+      presignData = JSON.parse(presignText)
     } catch {
-      throw new Error(`Error del servidor (${res.status}): ${text.substring(0, 200)}`)
+      throw new Error(`Error del servidor (${presignRes.status}): ${presignText.substring(0, 200)}`)
     }
 
-    if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
-    return data.key
+    if (!presignRes.ok) throw new Error(presignData.error || `Error ${presignRes.status}`)
+
+    const { key, uploadUrl } = presignData
+
+    // 2. Upload directly to R2
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+    })
+
+    if (!uploadRes.ok) throw new Error(`Error al subir a R2 (${uploadRes.status})`)
+
+    // 3. Confirm upload in database
+    const confirmRes = await fetch('/api/admin/confirm-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ productId, key }),
+    })
+
+    const confirmText = await confirmRes.text()
+    let confirmData: any
+    try {
+      confirmData = JSON.parse(confirmText)
+    } catch {
+      throw new Error(`Error al confirmar (${confirmRes.status}): ${confirmText.substring(0, 200)}`)
+    }
+
+    if (!confirmRes.ok) throw new Error(confirmData.error || `Error al confirmar ${confirmRes.status}`)
+
+    return key
   }
 
   const handleFiles = async (fileList: FileList | File[]) => {
@@ -81,7 +116,7 @@ export default function ProductFilesPage() {
       const uploadIndex = uploads.length + i
 
       try {
-        const key = await uploadFileServer(file)
+        const key = await uploadFileDirect(file)
         setUploads(prev => prev.map((u, idx) =>
           idx === uploadIndex ? { ...u, status: 'success' as const, key: key || undefined } : u
         ))
