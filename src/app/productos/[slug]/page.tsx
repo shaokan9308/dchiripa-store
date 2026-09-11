@@ -1,8 +1,8 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { Download, Check, Star, FileCode, Layers, Archive } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Download, Check, Star, FileCode, Layers, Archive, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +36,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [buying, setBuying] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
+  const [currentImage, setCurrentImage] = useState(0)
+  const [paused, setPaused] = useState(false)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -66,6 +68,22 @@ export default function ProductDetailPage() {
     }
     checkAccess()
   }, [session, product])
+
+  const totalImages = product?.images.length || 0
+
+  const nextImage = useCallback(() => {
+    setCurrentImage(prev => (prev + 1) % totalImages)
+  }, [totalImages])
+
+  const prevImage = useCallback(() => {
+    setCurrentImage(prev => (prev - 1 + totalImages) % totalImages)
+  }, [totalImages])
+
+  useEffect(() => {
+    if (!product || totalImages <= 1 || paused) return
+    const interval = setInterval(nextImage, 3000)
+    return () => clearInterval(interval)
+  }, [product, totalImages, paused, nextImage])
 
   if (loading) {
     return <ProductSkeleton />
@@ -138,22 +156,60 @@ export default function ProductDetailPage() {
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* Gallery */}
-          <div className="space-y-4">
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+          {/* Gallery Carousel */}
+          <div
+            className="space-y-4"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
+            <div className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
               <img
-                src={product.images[0] || '/placeholder-product.jpg'}
+                src={product.images[currentImage] || '/placeholder-product.jpg'}
                 alt={product.name}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
               />
+
+              {totalImages > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {product.images.map((_: string, i: number) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentImage(i)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          i === currentImage ? 'bg-white w-4' : 'bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
+
+            {totalImages > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {product.images.map((img: string, i: number) => (
                   <button
                     key={i}
-                    className="relative h-20 w-20 flex-shrink-0 rounded overflow-hidden border-2 transition-colors"
-                    style={{ borderColor: i === 0 ? 'hsl(var(--primary))' : 'transparent' }}
+                    onClick={() => setCurrentImage(i)}
+                    className={`relative h-20 w-20 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
+                      i === currentImage
+                        ? 'border-primary ring-2 ring-primary/20'
+                        : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
                   >
                     <img src={img} alt={`${product.name} ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                   </button>
