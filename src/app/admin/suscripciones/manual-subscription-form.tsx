@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,18 +14,15 @@ interface User {
   email: string
 }
 
-export default function ManualSubscriptionForm() {
-  const [users, setUsers] = useState<User[]>([])
+interface Props {
+  users: User[]
+}
+
+export default function ManualSubscriptionForm({ users }: Props) {
   const [selectedUser, setSelectedUser] = useState('')
   const [months, setMonths] = useState(1)
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-
-  useEffect(() => {
-    fetch('/api/admin/users')
-      .then(r => r.json())
-      .then(data => setUsers(data.users || []))
-  }, [])
 
   const filteredUsers = users.filter(u =>
     u.email.toLowerCase().includes(search.toLowerCase()) ||

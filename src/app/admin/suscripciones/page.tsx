@@ -22,6 +22,11 @@ export default async function AdminSubscriptionsPage() {
     include: { user: { select: { id: true, name: true, email: true } } },
   })
 
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, name: true, email: true },
+  })
+
   const totalSubscriptions = subscriptions.length
   const activeSubscriptions = subscriptions.filter(s => s.status === 'active').length
   const canceledSubscriptions = subscriptions.filter(s => s.status === 'canceled').length
@@ -97,7 +102,7 @@ export default async function AdminSubscriptionsPage() {
         </Card>
       </div>
 
-      <ManualSubscriptionForm />
+      <ManualSubscriptionForm users={users} />
 
       <SubscriptionFilters subscriptions={subscriptions} statusColors={statusColors} statusLabels={statusLabels} />
     </div>
