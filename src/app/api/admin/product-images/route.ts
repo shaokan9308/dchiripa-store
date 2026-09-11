@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ key, uploadUrl, publicUrl })
   } catch (e) {
     console.error('[PRODUCT IMAGES PRESIGN]', e)
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
 
@@ -50,13 +50,17 @@ export async function DELETE(request: Request) {
     const product = await prisma.product.findUnique({ where: { id: productId } })
     if (!product) return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 })
 
+    if (!product.images.includes(imageUrl)) {
+      return NextResponse.json({ error: 'Imagen no pertenece al producto' }, { status: 400 })
+    }
+
     const publicUrl = process.env.R2_PUBLIC_URL || ''
     const key = imageUrl.replace(`${publicUrl}/`, '')
 
     try {
       await deleteFile(key)
     } catch {
-      // File may already be deleted
+      console.error('[PRODUCT IMAGES DELETE] Failed to delete R2 file:', key)
     }
 
     const updatedImages = product.images.filter(img => img !== imageUrl)
@@ -68,6 +72,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true, images: updatedImages })
   } catch (e) {
     console.error('[PRODUCT IMAGES DELETE]', e)
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

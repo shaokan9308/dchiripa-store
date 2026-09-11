@@ -1,12 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: 'postgresql://postgres.tmqwdsnfutwfmjzvpnwv:FKM5Ow721b065tV3@aws-0-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1',
-    },
-  },
-})
+const prisma = new PrismaClient()
 
 async function main() {
   await prisma.$executeRawUnsafe('ALTER TABLE "Subscription" ALTER COLUMN "stripeCustomerId" DROP NOT NULL')

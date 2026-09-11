@@ -35,12 +35,14 @@ export async function POST() {
       maxAge: 0,
       httpOnly: true,
       sameSite: 'lax',
+      secure: true,
     })
     cookieStore.set('__Secure-better-auth.session_data', '', {
       path: '/',
       maxAge: 0,
       httpOnly: true,
       sameSite: 'lax',
+      secure: true,
     })
 
     return NextResponse.json({ success: true })

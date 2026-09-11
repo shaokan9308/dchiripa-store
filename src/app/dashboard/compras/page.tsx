@@ -37,7 +37,7 @@ export default function PurchasesPage() {
         setPagination(data.pagination)
       }
     } catch {
-      console.error('Error fetching purchases')
+      // Failed to fetch purchases
     } finally {
       setLoading(false)
     }

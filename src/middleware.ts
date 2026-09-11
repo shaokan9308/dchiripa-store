@@ -5,6 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const isAuthRoute = pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')
+  const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
 
   const cookieHeader = request.headers.get('cookie') || ''
   const hasSession =
@@ -15,9 +16,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
+  if (isProtectedRoute && !hasSession) {
+    const loginUrl = new URL('/auth/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/auth/:path*'],
+  matcher: ['/auth/:path*', '/dashboard/:path*', '/admin/:path*'],
 }

@@ -10,11 +10,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const { productId, mode } = await request.json()
+    const { productId, priceId: clientPriceId, mode } = await request.json()
 
     let priceId: string | undefined
     if (mode === 'subscription') {
-      priceId = process.env.STRIPE_PRICE_MONTHLY
+      priceId = clientPriceId || process.env.STRIPE_PRICE_MONTHLY
     }
 
     if (!priceId && mode !== 'subscription') {

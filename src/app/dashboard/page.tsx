@@ -41,7 +41,7 @@ export default function DashboardPage() {
       if (purchasesRes.ok) setRecentPurchases((await purchasesRes.json()).purchases)
       if (downloadsRes.ok) setRecentDownloads((await downloadsRes.json()).downloads)
     } catch {
-      console.error('Error fetching dashboard data')
+      // Failed to fetch dashboard data
     } finally {
       setLoading(false)
     }

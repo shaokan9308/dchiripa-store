@@ -15,7 +15,8 @@ import { toast } from '@/hooks/use-toast'
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/dashboard'
+  const rawRedirect = searchParams.get('redirect') || '/dashboard'
+  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -124,13 +125,9 @@ export function LoginForm() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-input" />
-                <span className="text-sm">Recordarme</span>
-              </Label>
+            <div className="flex items-center justify-end">
               <Link href="/auth/forgot-password" className="text-sm font-medium text-primary hover:underline">
-                ¿Olvidaste tu contraseña?
+                Olvidaste tu contrasena?
               </Link>
             </div>
 

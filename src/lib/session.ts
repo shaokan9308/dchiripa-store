@@ -41,8 +41,7 @@ export async function getSession() {
 
     if (!user) return null
     return { user }
-  } catch (e) {
-    console.log('[SESSION] Error:', e)
+  } catch {
     return null
   }
 }

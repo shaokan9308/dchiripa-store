@@ -33,7 +33,7 @@ export default function DownloadsPage() {
         setPagination(data.pagination)
       }
     } catch {
-      console.error('Error fetching downloads')
+      // Failed to fetch downloads
     } finally {
       setLoading(false)
     }

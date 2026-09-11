@@ -59,11 +59,17 @@ export async function POST(
 
     if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
 
+    const maxSize = 50 * 1024 * 1024
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: 'Archivo muy grande (max 50MB)' }, { status: 400 })
+    }
+
     const product = await prisma.product.findUnique({ where: { id } })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const ext = file.name.split('.').pop() || ''
-    const key = `products/${product.slug}/${Date.now()}-${file.name}`
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 200)
+    const ext = safeName.split('.').pop() || ''
+    const key = `products/${product.slug}/${Date.now()}-${safeName}`
     const buffer = Buffer.from(await file.arrayBuffer())
 
     await uploadFile(key, buffer, file.type || `application/${ext}`)
@@ -76,7 +82,7 @@ export async function POST(
     return NextResponse.json({ key })
   } catch (e) {
     console.error('[FILES POST]', e)
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
 
@@ -106,6 +112,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('[FILES DELETE]', e)
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

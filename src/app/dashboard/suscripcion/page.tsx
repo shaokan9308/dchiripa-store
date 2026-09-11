@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatDate, formatPrice } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 import Link from 'next/link'
 
 interface Subscription {
@@ -67,7 +68,7 @@ export default function SubscriptionPage() {
         setSubscription(data.subscription)
       }
     } catch {
-      console.error('Error fetching subscription')
+      // Failed to fetch subscription
     } finally {
       setLoading(false)
     }
@@ -113,7 +114,7 @@ export default function SubscriptionPage() {
         window.location.href = data.url
       }
     } catch {
-      console.error('Error opening portal')
+      toast({ title: 'Error', description: 'No se pudo abrir el portal', variant: 'destructive' })
     } finally {
       setManaging(false)
     }
@@ -131,7 +132,7 @@ export default function SubscriptionPage() {
         window.location.href = data.url
       }
     } catch {
-      console.error('Error starting checkout')
+      toast({ title: 'Error', description: 'No se pudo iniciar el checkout', variant: 'destructive' })
     }
   }
 

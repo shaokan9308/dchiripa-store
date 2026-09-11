@@ -182,9 +182,21 @@ export default function ProductForm({ product }: { product?: Product }) {
       })
 
       if (res.ok) {
-        router.push('/admin/productos')
-        router.refresh()
+        const data = await res.json()
+        if (!product && data.id) {
+          toast({ title: 'Producto creado', description: 'Redirigiendo para subir imagenes...' })
+          router.push(`/admin/productos/${data.id}/archivos`)
+          router.refresh()
+        } else {
+          router.push('/admin/productos')
+          router.refresh()
+        }
+      } else {
+        const data = await res.json()
+        toast({ title: 'Error', description: data.error || 'No se pudo guardar', variant: 'destructive' })
       }
+    } catch {
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -192,12 +204,14 @@ export default function ProductForm({ product }: { product?: Product }) {
 
   const handleDelete = async () => {
     if (!product) return
-    if (!confirm('¿Eliminar este producto?')) return
+    if (!confirm('Eliminar este producto?')) return
 
     const res = await fetch(`/api/admin/products/${product.id}`, { method: 'DELETE' })
     if (res.ok) {
       router.push('/admin/productos')
       router.refresh()
+    } else {
+      toast({ title: 'Error', description: 'No se pudo eliminar el producto', variant: 'destructive' })
     }
   }
 
@@ -205,7 +219,7 @@ export default function ProductForm({ product }: { product?: Product }) {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
       <Card>
         <CardHeader>
-          <CardTitle>Informacion basica</CardTitle>
+          <CardTitle>Información básica</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

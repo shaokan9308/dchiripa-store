@@ -93,6 +93,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       await sendSubscriptionConfirmationEmail(user.email, planName, portalUrl)
     }
   } else if (mode === 'payment' && productId) {
+    const existingPurchase = await prisma.purchase.findFirst({
+      where: { stripeSessionId: session.id },
+    })
+    if (existingPurchase) return
+
     const purchase = await prisma.purchase.create({
       data: {
         userId,

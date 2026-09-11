@@ -18,7 +18,11 @@ export async function PATCH(
     const { role } = body
 
     if (!role || !['user', 'admin'].includes(role)) {
-      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
+      return NextResponse.json({ error: 'Rol invalido' }, { status: 400 })
+    }
+
+    if (id === session.user.id && role !== 'admin') {
+      return NextResponse.json({ error: 'No puedes cambiarte el rol a ti mismo' }, { status: 400 })
     }
 
     const user = await prisma.user.update({

@@ -160,12 +160,13 @@ export default function PricingPage() {
             Comparación detallada
           </h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left" role="table">
+              <caption className="sr-only">Comparacion de planes: Gratis vs Suscripcion</caption>
               <thead>
                 <tr className="border-b border-muted">
-                  <th className="pb-4 font-medium">Característica</th>
-                  <th className="pb-4 font-medium text-center">Gratis</th>
-                  <th className="pb-4 font-medium text-center">Suscripción</th>
+                  <th scope="col" className="pb-4 font-medium">Caracteristica</th>
+                  <th scope="col" className="pb-4 font-medium text-center">Gratis</th>
+                  <th scope="col" className="pb-4 font-medium text-center">Suscripcion</th>
                 </tr>
               </thead>
               <tbody>

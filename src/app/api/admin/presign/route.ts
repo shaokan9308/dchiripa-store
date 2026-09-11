@@ -31,6 +31,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ key, uploadUrl })
   } catch (e) {
     console.error('[PRESIGN]', e)
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
