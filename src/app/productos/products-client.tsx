@@ -144,6 +144,7 @@ interface Product {
   tags: string[]
   fileKeys: string[]
   isActive: boolean
+  accessType: string
   createdAt: string
 }
 
