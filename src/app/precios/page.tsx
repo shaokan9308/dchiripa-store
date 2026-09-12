@@ -66,18 +66,6 @@ const PLANS = [
   },
 ]
 
-const COMPARISON = [
-  { feature: 'Explorar catálogo', free: true, paid: true },
-  { feature: 'Compras individuales', free: true, paid: true },
-  { feature: 'Licencia comercial', free: true, paid: true },
-  { feature: 'Descargas ilimitadas', free: false, paid: true },
-  { feature: 'Acceso completo al catálogo', free: false, paid: true },
-  { feature: 'Nuevos archivos cada semana', free: false, paid: true },
-  { feature: 'Soporte prioritario', free: false, paid: true },
-  { feature: 'Acceso anticipado', free: false, paid: true },
-  { feature: 'Soporte dedicado', free: false, paid: true },
-]
-
 export default function PricingPage() {
   return (
     <div className="py-20">
@@ -152,42 +140,6 @@ export default function PricingPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Comparison Table */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-10">
-            Comparación detallada
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left" role="table">
-              <caption className="sr-only">Comparacion de planes: Gratis vs Suscripcion</caption>
-              <thead>
-                <tr className="border-b border-muted">
-                  <th scope="col" className="pb-4 font-medium">Caracteristica</th>
-                  <th scope="col" className="pb-4 font-medium text-center">Gratis</th>
-                  <th scope="col" className="pb-4 font-medium text-center">Suscripcion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON.map((row, i) => (
-                  <tr key={i} className="border-b border-muted/50">
-                    <td className="py-4">{row.feature}</td>
-                    <td className="py-4 text-center">
-                      {row.free ? (
-                        <Check className="h-5 w-5 text-success mx-auto" />
-                      ) : (
-                        <X className="h-5 w-5 text-muted-foreground mx-auto" />
-                      )}
-                    </td>
-                    <td className="py-4 text-center">
-                      <Check className="h-5 w-5 text-success mx-auto" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
 
         {/* FAQ */}

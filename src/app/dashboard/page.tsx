@@ -195,17 +195,17 @@ function StatCard({
   href: string
   variant?: 'default' | 'success' | 'warning'
 }) {
-  const variants = {
-    default: '',
-    success: 'border-l-2 border-l-success',
-    warning: 'border-l-2 border-l-warning',
+  const iconColors = {
+    default: 'text-muted-foreground',
+    success: 'text-success',
+    warning: 'text-warning',
   }
 
   return (
-    <Card className={variants[variant]}>
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-5 w-5 text-muted-foreground" />
+        <Icon className={`h-5 w-5 ${iconColors[variant]}`} />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
