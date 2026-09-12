@@ -166,7 +166,7 @@ export default function HomePage() {
                 <CardContent className="pt-6">
                   <div className="flex gap-1 mb-4" role="img" aria-label="5 de 5 estrellas">
                     {[...Array(5)].map((_, j) => (
-                      <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
+                      <Star key={j} className="h-5 w-5 fill-warning text-warning" aria-hidden="true" />
                     ))}
                   </div>
                   <p className="mb-6 text-muted-foreground">&quot;{testimonial.quote}&quot;</p>

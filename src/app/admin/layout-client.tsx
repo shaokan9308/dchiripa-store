@@ -41,6 +41,7 @@ export default function AdminLayoutClient({
       )}
 
       <aside
+        aria-label="Panel de administracion"
         className={cn(
           'fixed left-0 top-0 z-50 h-full w-64 transform border-r bg-card transition-transform duration-200 lg:relative lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'

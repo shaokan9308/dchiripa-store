@@ -108,8 +108,8 @@ export default async function AdminDashboard() {
             <div className="text-3xl font-bold">{activeSubscriptions}</div>
             <p className="text-xs text-muted-foreground mt-1">{canceledSubscriptions} canceladas</p>
           </CardContent>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600/20">
-            <div className="h-full bg-purple-600" style={{ width: `${totalSubscriptions > 0 ? (activeSubscriptions / totalSubscriptions) * 100 : 0}%` }} />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/20">
+            <div className="h-full bg-primary" style={{ width: `${totalSubscriptions > 0 ? (activeSubscriptions / totalSubscriptions) * 100 : 0}%` }} />
           </div>
         </Card>
 
