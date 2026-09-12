@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, Eye, EyeOff, Github, Chrome } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Chrome } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -66,10 +66,6 @@ export function LoginForm() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            <Button variant="outline" onClick={() => handleOAuth('github')} className="gap-2">
-              <Github className="h-4 w-4" />
-              Continuar con GitHub
-            </Button>
             <Button variant="outline" onClick={() => handleOAuth('google')} className="gap-2">
               <Chrome className="h-4 w-4" />
               Continuar con Google
