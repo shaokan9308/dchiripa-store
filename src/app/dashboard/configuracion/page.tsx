@@ -28,11 +28,20 @@ export default function SettingsPage() {
     confirm: '',
   })
 
-  const [notifications, setNotifications] = useState({
-    emailMarketing: true,
-    emailUpdates: true,
-    emailSecurity: true,
+  const [notifications, setNotifications] = useState(() => {
+    if (typeof window === 'undefined') return { emailMarketing: true, emailUpdates: true, emailSecurity: true }
+    try {
+      const saved = localStorage.getItem('dchiripa-notifications')
+      return saved ? JSON.parse(saved) : { emailMarketing: true, emailUpdates: true, emailSecurity: true }
+    } catch {
+      return { emailMarketing: true, emailUpdates: true, emailSecurity: true }
+    }
   })
+
+  const handleNotificationsChange = (newNotifications: typeof notifications) => {
+    setNotifications(newNotifications)
+    localStorage.setItem('dchiripa-notifications', JSON.stringify(newNotifications))
+  }
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,17 +89,29 @@ export default function SettingsPage() {
     }
   }
 
+  const [deletePassword, setDeletePassword] = useState('')
+
   const handleDeleteAccount = async () => {
-    if (!confirm('¿Estás seguro? Esta acción no se puede deshacer y eliminará todos tus datos.')) return
-    if (!confirm('Última confirmación: ¿Eliminar tu cuenta permanentemente?')) return
+    if (!confirm('Estas seguro? Esta accion no se puede deshacer.')) return
+    if (!deletePassword) {
+      toast({ title: 'Error', description: 'Ingresa tu contrasena para confirmar', variant: 'destructive' })
+      return
+    }
 
     setLoading(true)
     try {
-      const res = await fetch('/api/user/account', { method: 'DELETE' })
-      if (!res.ok) throw new Error('Error al eliminar')
+      const res = await fetch('/api/user/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Error al eliminar')
+      }
       toast({ title: 'Cuenta eliminada', description: 'Tu cuenta ha sido eliminada permanentemente' })
-    } catch {
-      toast({ title: 'Error', description: 'No se pudo eliminar la cuenta', variant: 'destructive' })
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'No se pudo eliminar la cuenta', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -127,11 +148,8 @@ export default function SettingsPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{session?.user?.name}</p>
+                    <p className="font-medium">{session?.user?.name || 'Usuario'}</p>
                     <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
-                    <Button variant="outline" size="sm" type="button">
-                      Cambiar avatar
-                    </Button>
                   </div>
                 </div>
 
@@ -248,17 +266,20 @@ export default function SettingsPage() {
               <CardDescription>Controla qué emails recibes de Dchiripa Store</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <p className="text-xs text-muted-foreground">
+                Estas preferencias se guardan localmente en tu navegador.
+              </p>
               <NotificationToggle
                 label="Actualizaciones de productos"
-                description="Nuevos archivos, categorías y características"
+                description="Nuevos archivos, categorias y caracteristicas"
                 checked={notifications.emailUpdates}
-                onChange={(checked) => setNotifications({ ...notifications, emailUpdates: checked })}
+                onChange={(checked) => handleNotificationsChange({ ...notifications, emailUpdates: checked })}
               />
               <NotificationToggle
                 label="Ofertas y promociones"
                 description="Descuentos, ofertas especiales y lanzamientos"
                 checked={notifications.emailMarketing}
-                onChange={(checked) => setNotifications({ ...notifications, emailMarketing: checked })}
+                onChange={(checked) => handleNotificationsChange({ ...notifications, emailMarketing: checked })}
               />
               <NotificationToggle
                 label="Seguridad y cuenta"
@@ -294,9 +315,17 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="deletePassword">Contrasena actual (requerida)</Label>
+                <Input
+                  id="deletePassword"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Tu contrasena actual"
+                />
                 <Label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" required />
-                  <span>Entiendo que esta acción es irreversible</span>
+                  <span>Entiendo que esta accion es irreversible</span>
                 </Label>
                 <Button variant="destructive" onClick={handleDeleteAccount} disabled={loading}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar mi cuenta'}

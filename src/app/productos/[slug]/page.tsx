@@ -62,8 +62,11 @@ export default function ProductDetailPage() {
     if (!session || !product) return
     const checkAccess = async () => {
       try {
-        const res = await fetch(`/api/download/${product.id}`, { method: 'HEAD' })
-        setHasAccess(res.ok)
+        const res = await fetch(`/api/access/${product.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setHasAccess(data.hasAccess)
+        }
       } catch {
         setHasAccess(false)
       }
@@ -188,6 +191,7 @@ export default function ProductDetailPage() {
               <img
                 src={product.images[currentImage] || '/placeholder-product.jpg'}
                 alt={product.name}
+                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }}
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
               />
 
@@ -195,22 +199,26 @@ export default function ProductDetailPage() {
                 <>
                   <button
                     onClick={prevImage}
+                    aria-label="Imagen anterior"
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={nextImage}
+                    aria-label="Imagen siguiente"
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
 
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5" role="group" aria-label="Indicadores de imagen">
                     {product.images.map((_: string, i: number) => (
                       <button
                         key={i}
                         onClick={() => setCurrentImage(i)}
+                        aria-label={`Ir a imagen ${i + 1}`}
+                        aria-current={i === currentImage ? 'true' : undefined}
                         className={`w-2 h-2 rounded-full transition-all ${
                           i === currentImage ? 'bg-white w-4' : 'bg-white/50'
                         }`}
@@ -233,7 +241,7 @@ export default function ProductDetailPage() {
                         : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={img} alt={`${product.name} ${i + 1}`} onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }} className="absolute inset-0 w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

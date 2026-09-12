@@ -17,6 +17,7 @@ interface Subscription {
   stripeCurrentPeriodEnd: string
   cancelAtPeriodEnd: boolean
   isManual?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stripeData?: any
 }
 
@@ -122,10 +123,11 @@ export default function SubscriptionPage() {
 
   const handleSubscribe = async (priceId: string) => {
     try {
+      const plan = priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY ? 'yearly' : 'monthly'
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, mode: 'subscription' }),
+        body: JSON.stringify({ plan, mode: 'subscription' }),
       })
       const data = await res.json()
       if (data.url) {

@@ -66,14 +66,18 @@ export function LoginForm() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            <Button variant="outline" onClick={() => handleOAuth('github')} className="gap-2">
-              <Github className="h-4 w-4" />
-              Continuar con GitHub
-            </Button>
-            <Button variant="outline" onClick={() => handleOAuth('google')} className="gap-2">
-              <Chrome className="h-4 w-4" />
-              Continuar con Google
-            </Button>
+            {process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID && (
+              <Button variant="outline" onClick={() => handleOAuth('github')} className="gap-2">
+                <Github className="h-4 w-4" />
+                Continuar con GitHub
+              </Button>
+            )}
+            {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+              <Button variant="outline" onClick={() => handleOAuth('google')} className="gap-2">
+                <Chrome className="h-4 w-4" />
+                Continuar con Google
+              </Button>
+            )}
           </div>
 
           <div className="relative my-6">

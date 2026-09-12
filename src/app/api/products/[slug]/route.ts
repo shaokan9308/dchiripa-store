@@ -12,8 +12,7 @@ export async function GET(
     select: {
       id: true, name: true, slug: true, description: true,
       price: true, currency: true, images: true, tags: true,
-      fileKeys: true, accessType: true, isActive: true,
-      createdAt: true, updatedAt: true,
+      accessType: true, isActive: true, createdAt: true, updatedAt: true,
     },
   })
 

@@ -98,6 +98,7 @@ export default function AdminLayoutClient({
       <button
         className="fixed bottom-4 right-4 z-40 lg:hidden rounded-full bg-primary p-3 shadow-lg text-primary-foreground"
         onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir menu de administracion"
       >
         <Menu className="h-6 w-6" />
       </button>

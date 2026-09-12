@@ -7,6 +7,17 @@ export async function GET(request: Request) {
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '12')))
   const tag = searchParams.get('tag')
   const search = searchParams.get('search')?.slice(0, 200)
+  const sort = searchParams.get('sort') || 'newest'
+
+  const orderBy = (() => {
+    switch (sort) {
+      case 'price_asc': return { price: 'asc' as const }
+      case 'price_desc': return { price: 'desc' as const }
+      case 'name': return { name: 'asc' as const }
+      case 'oldest': return { createdAt: 'asc' as const }
+      default: return { createdAt: 'desc' as const }
+    }
+  })()
 
   const where = {
     isActive: true,
@@ -24,7 +35,7 @@ export async function GET(request: Request) {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       select: {
         id: true, name: true, slug: true, description: true,
         price: true, currency: true, images: true, tags: true,

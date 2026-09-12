@@ -95,6 +95,7 @@ export function ProductCard({ product }: ProductCardProps) {
             src={imageUrl}
             alt={product.name}
             loading="lazy"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {isSubscription && (

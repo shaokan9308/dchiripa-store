@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       .sort((a, b) => b.count - a.count)
 
     return NextResponse.json(tags)
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
@@ -44,23 +44,25 @@ export async function PATCH(request: Request) {
     const { oldName, newName } = await request.json()
 
     if (!oldName || !newName || oldName === newName) {
-      return NextResponse.json({ error: 'Nombres inválidos' }, { status: 400 })
+      return NextResponse.json({ error: 'Nombres invalidos' }, { status: 400 })
     }
 
     const products = await prisma.product.findMany({
       where: { tags: { has: oldName } },
     })
 
-    for (const product of products) {
-      const newTags = product.tags.map(t => t === oldName ? newName : t)
-      await prisma.product.update({
-        where: { id: product.id },
-        data: { tags: newTags },
+    await prisma.$transaction(
+      products.map(product => {
+        const newTags = product.tags.map(t => t === oldName ? newName : t)
+        return prisma.product.update({
+          where: { id: product.id },
+          data: { tags: newTags },
+        })
       })
-    }
+    )
 
     return NextResponse.json({ ok: true, updated: products.length })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
@@ -80,16 +82,18 @@ export async function DELETE(request: Request) {
       where: { tags: { has: name } },
     })
 
-    for (const product of products) {
-      const newTags = product.tags.filter(t => t !== name)
-      await prisma.product.update({
-        where: { id: product.id },
-        data: { tags: newTags },
+    await prisma.$transaction(
+      products.map(product => {
+        const newTags = product.tags.filter(t => t !== name)
+        return prisma.product.update({
+          where: { id: product.id },
+          data: { tags: newTags },
+        })
       })
-    }
+    )
 
     return NextResponse.json({ ok: true, removed: products.length })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

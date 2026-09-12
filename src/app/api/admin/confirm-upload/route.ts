@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     await prisma.product.update({
       where: { id: productId },
-      data: { fileKeys: [...product.fileKeys, key] },
+      data: { fileKeys: { push: key } },
     })
 
     return NextResponse.json({ ok: true })
