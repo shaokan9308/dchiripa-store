@@ -155,30 +155,35 @@ function ProductsList({
 }) {
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [totalPages, setTotalPages] = useState(1)
   const [hasSubscription, setHasSubscription] = useState(false)
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      try {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          limit: '12',
-          ...(search && { search }),
-          ...(tag && { tag }),
-          ...(sort && { sort }),
-        })
-        const res = await fetch(`/api/products?${params}`)
-        const data = await res.json()
-        setProducts(data.products || [])
-        setTotalPages(data.pagination?.totalPages || 1)
-      } catch {
-        setProducts([])
-      } finally {
-        setLoading(false)
-      }
+  const fetchProducts = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '12',
+        ...(search && { search }),
+        ...(tag && { tag }),
+        ...(sort && { sort }),
+      })
+      const res = await fetch(`/api/products?${params}`)
+      if (!res.ok) throw new Error('Error al cargar productos')
+      const data = await res.json()
+      setProducts(data.products || [])
+      setTotalPages(data.pagination?.totalPages || 1)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error de conexion')
+      setProducts([])
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchProducts()
   }, [search, tag, sort, page])
 
@@ -202,6 +207,17 @@ function ProductsList({
             <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
           </div>
         ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-destructive mb-2">{error}</p>
+        <Button variant="outline" size="sm" onClick={fetchProducts}>
+          Reintentar
+        </Button>
       </div>
     )
   }

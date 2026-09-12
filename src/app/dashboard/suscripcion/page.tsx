@@ -154,7 +154,7 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Current Plan */}
-      <Card className={isActive ? 'border-l-4 border-l-success' : isPastDue ? 'border-l-4 border-l-warning' : ''}>
+      <Card className={isActive ? 'bg-success/5' : isPastDue ? 'bg-warning/5' : ''}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>

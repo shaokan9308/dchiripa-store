@@ -78,8 +78,12 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero — product showcase */}
-      <section aria-label="Presentacion" className="relative border-b">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section aria-label="Presentacion" className="relative border-b bg-muted/30">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
+        </div>
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
             {/* Left: copy */}
             <div className="flex flex-col justify-center">
