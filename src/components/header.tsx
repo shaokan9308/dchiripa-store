@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, X, ShoppingBag, User, LogOut, LayoutDashboard, Shield } from 'lucide-react'
-import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Menu, X, ShoppingBag, User, LogOut, LayoutDashboard, Shield, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,9 +20,27 @@ import { signOutAndRedirect } from '@/lib/sign-out'
 
 export function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
   const { isAdmin } = useUserRole()
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        router.push('/productos')
+      }
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        router.push('/productos')
+        setTimeout(() => document.querySelector<HTMLInputElement>('[data-search-input]')?.focus(), 200)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [router])
 
   const handleSignOut = () => {
     signOutAndRedirect()
@@ -58,6 +76,14 @@ export function Header() {
         </div>
 
         <div className="hidden md:flex md:items-center md:gap-4">
+          <button
+            onClick={() => { router.push('/productos'); setTimeout(() => document.querySelector<HTMLInputElement>('[data-search-input]')?.focus(), 200) }}
+            className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+          >
+            <Search className="h-4 w-4" />
+            <span>Buscar</span>
+            <kbd className="ml-1 hidden rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-block">/</kbd>
+          </button>
           {session ? (
             <>
               <Link href="/dashboard">

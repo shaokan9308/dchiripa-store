@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, User, Eye, EyeOff, Chrome } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, Chrome, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,6 +23,26 @@ export function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  const passwordChecks = useMemo(() => ({
+    length: password.length >= 8,
+    match: password.length > 0 && password === confirmPassword,
+  }), [password, confirmPassword])
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+  const fieldError = (field: string) => {
+    if (!touched[field]) return null
+    switch (field) {
+      case 'email': return email.length > 0 && !emailValid ? 'Ingresa un email valido' : null
+      case 'password': return password.length > 0 && password.length < 8 ? 'Minimo 8 caracteres' : null
+      case 'confirmPassword': return confirmPassword.length > 0 && !passwordChecks.match ? 'Las contrasenas no coinciden' : null
+      default: return null
+    }
+  }
+
+  const handleBlur = (field: string) => setTouched(prev => ({ ...prev, [field]: true }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,24 +140,27 @@ export function RegisterForm() {
                   placeholder="tu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
+                  onBlur={() => handleBlur('email')}
+                  className={`pl-10 ${fieldError('email') ? 'border-destructive' : ''}`}
                   required
                   autoComplete="email"
                 />
               </div>
+              {fieldError('email') && <p className="text-xs text-destructive">{fieldError('email')}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">Contrasena</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="Minimo 8 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
+                  onBlur={() => handleBlur('password')}
+                  className={`pl-10 pr-10 ${fieldError('password') ? 'border-destructive' : ''}`}
                   required
                   autoComplete="new-password"
                 />
@@ -149,23 +172,38 @@ export function RegisterForm() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {password.length > 0 && (
+                <div className="flex gap-2 text-xs">
+                  <span className={`flex items-center gap-1 ${passwordChecks.length ? 'text-success' : 'text-muted-foreground'}`}>
+                    {passwordChecks.length ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    8+ caracteres
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+              <Label htmlFor="confirmPassword">Confirmar contrasena</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Repite tu contraseña"
+                  placeholder="Repite tu contrasena"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10"
+                  onBlur={() => handleBlur('confirmPassword')}
+                  className={`pl-10 ${fieldError('confirmPassword') ? 'border-destructive' : ''}`}
                   required
                   autoComplete="new-password"
                 />
               </div>
+              {confirmPassword.length > 0 && (
+                <span className={`flex items-center gap-1 text-xs ${passwordChecks.match ? 'text-success' : 'text-destructive'}`}>
+                  {passwordChecks.match ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                  {passwordChecks.match ? 'Las contrasenas coinciden' : 'Las contrasenas no coinciden'}
+                </span>
+              )}
             </div>
 
             <div className="flex items-start gap-2">

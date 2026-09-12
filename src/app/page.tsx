@@ -1,150 +1,192 @@
 import Link from 'next/link'
-import { ArrowRight, Download, Layers, Shield, Star, Zap } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight, Download, Layers, Shield, Star, Zap, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { prisma } from '@/lib/prisma'
+
+async function getFeaturedProducts() {
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      select: {
+        id: true, name: true, slug: true, price: true, currency: true,
+        images: true, tags: true, accessType: true,
+      },
+    })
+    return products
+  } catch {
+    return []
+  }
+}
+
+function formatPrice(price: number, currency: string) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency }).format(price / 100)
+}
 
 const features = [
   {
     icon: Layers,
-    title: 'Archivos editables profesionales',
-    description: 'PSD, AI, Figma, Sketch, plantillas de After Effects y mas. Listos para usar y personalizar.',
+    title: 'Archivos editables',
+    description: 'PSD, AI, Figma, Sketch y After Effects. Listos para personalizar.',
   },
   {
     icon: Download,
     title: 'Descargas ilimitadas',
-    description: 'Con tu suscripcion accede a todo el catalogo sin limites. Descarga lo que necesites, cuando lo necesites.',
+    description: 'Suscribete y accede a todo el catalogo sin limites.',
   },
   {
     icon: Zap,
     title: 'Acceso instantaneo',
-    description: 'Compra individual o suscribete. Los archivos estan disponibles inmediatamente tras el pago.',
+    description: 'Compra o suscribete. Los archivos estan disponibles de inmediato.',
   },
   {
     icon: Shield,
-    title: 'Licencia comercial incluida',
-    description: 'Usa los archivos en proyectos personales y comerciales sin preocupaciones legales.',
+    title: 'Licencia comercial',
+    description: 'Usa los archivos en proyectos personales y comerciales.',
   },
 ]
 
 const categories = [
-  { name: 'UI Kits', slug: 'ui-kits', icon: Layers },
-  { name: 'Branding', slug: 'branding', icon: Star },
-  { name: 'Ilustraciones', slug: 'ilustraciones', icon: Download },
-  { name: 'Plantillas Web', slug: 'plantillas-web', icon: Zap },
-  { name: 'Motion Graphics', slug: 'motion-graphics', icon: Shield },
-  { name: 'Mockups', slug: 'mockups', icon: Layers },
+  { name: 'UI Kits', slug: 'ui-kits', count: 'Plantillas de interfaz' },
+  { name: 'Branding', slug: 'branding', count: 'Identidad visual' },
+  { name: 'Mockups', slug: 'mockups', count: 'Presentaciones realistas' },
+  { name: 'Plantillas Web', slug: 'plantillas-web', count: 'Sitios y landing pages' },
+  { name: 'Motion Graphics', slug: 'motion-graphics', count: 'Animaciones y video' },
+  { name: 'Ilustraciones', slug: 'ilustraciones', count: 'Arte digital' },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const products = await getFeaturedProducts()
+
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
-      <section aria-label="Presentacion" className="relative py-20 lg:py-32 overflow-hidden">
+      {/* Hero — product showcase */}
+      <section aria-label="Presentacion" className="relative border-b">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-6 text-sm">
-              Nuevo: Suscripcion mensual con descargas ilimitadas
-            </Badge>
-            <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-6xl">
-              Archivos editables para <span className="text-primary">creativos</span> que quieren ir rapido
-            </h1>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Accede a miles de PSD, AI, Figma, plantillas y mockups profesionales.
-              Suscripcion mensual o compra individual. Licencia comercial incluida.
-            </p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/productos">
-                <Button size="lg" className="w-full sm:w-auto gap-2">
-                  Explorar catalogo
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/precios">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Ver precios
-                </Button>
-              </Link>
+          <div className="grid gap-8 py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
+            {/* Left: copy */}
+            <div className="flex flex-col justify-center">
+              <Badge variant="secondary" className="mb-4 w-fit text-xs">
+                <Sparkles className="mr-1.5 h-3 w-3" />
+                Suscripcion mensual disponible
+              </Badge>
+              <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl" style={{ textWrap: 'balance', letterSpacing: '-0.02em' }}>
+                Archivos editables para creativos que van rapido
+              </h1>
+              <p className="mt-6 max-w-lg text-lg text-muted-foreground">
+                PSD, AI, Figma, mockups y mas. Suscripcion mensual o compra individual. Licencia comercial incluida.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/productos">
+                  <Button size="lg" className="gap-2">
+                    Explorar catalogo
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/precios">
+                  <Button size="lg" variant="ghost">
+                    Ver precios
+                  </Button>
+                </Link>
+              </div>
+              <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Download className="h-4 w-4" />
+                  Descargas ilimitadas
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Shield className="h-4 w-4" />
+                  Licencia comercial
+                </span>
+              </div>
             </div>
+
+            {/* Right: featured products */}
+            {products.length > 0 && (
+              <div className="relative hidden lg:block">
+                <div className="grid grid-cols-2 gap-3">
+                  {products.slice(0, 4).map((product, i) => (
+                    <Link
+                      key={product.id}
+                      href={`/productos/${product.slug}`}
+                      className={`group relative overflow-hidden rounded-lg border bg-muted transition-all hover:shadow-lg ${
+                        i === 0 ? 'row-span-2 aspect-[3/4]' : 'aspect-square'
+                      }`}
+                    >
+                      <Image
+                        src={product.images[0] || '/placeholder-product.jpg'}
+                        alt={product.name}
+                        fill
+                        sizes={i === 0 ? '(max-width: 1024px) 50vw, 33vw' : '(max-width: 1024px) 25vw, 17vw'}
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-sm font-medium text-white truncate">{product.name}</p>
+                        <p className="text-xs text-white/80">{formatPrice(product.price, product.currency)}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section aria-label="Caracteristicas" className="py-20">
+      {/* Features — horizontal layout instead of cards */}
+      <section aria-label="Caracteristicas" className="border-b bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Todo lo que necesitas para tus proyectos
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Herramientas profesionales que te ahorran horas de trabajo
-            </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px lg:grid-cols-4">
             {features.map((feature) => (
-              <Card key={feature.title} className="h-full">
-                <CardHeader>
-                  <feature.icon className="mb-4 h-10 w-10 text-primary" aria-hidden="true" />
-                  <CardTitle>{feature.title}</CardTitle>
-                  <CardDescription>{feature.description}</CardDescription>
-                </CardHeader>
-              </Card>
+              <div key={feature.title} className="flex flex-col gap-2 p-6 lg:p-8">
+                <feature.icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                <h3 className="text-sm font-semibold">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Categories */}
-      <section aria-label="Categorias populares" className="py-20 bg-muted/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Categorias populares
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Encuentra exactamente lo que buscas
-            </p>
+      {/* Categories — visual grid with hover */}
+      <section aria-label="Categorias populares" className="border-b">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+          <div className="flex flex-col gap-2 mb-10">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Categorias populares</h2>
+            <p className="text-muted-foreground">Encuentra exactamente lo que buscas</p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {categories.map((category) => (
               <Link
                 key={category.name}
                 href={`/productos?tag=${category.slug}`}
-                className="group flex items-center gap-4 rounded-lg border p-6 transition-all hover:border-primary hover:bg-background hover:shadow-md"
+                className="group flex flex-col items-center gap-2 rounded-lg border p-5 text-center transition-all hover:border-primary hover:bg-primary/5"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <category.icon className="h-6 w-6" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">{category.name}</h3>
-                </div>
+                <span className="text-sm font-semibold group-hover:text-primary transition-colors">{category.name}</span>
+                <span className="text-xs text-muted-foreground">{category.count}</span>
               </Link>
             ))}
           </div>
-          <div className="mt-10 text-center">
-            <Link href="/productos">
-              <Button variant="outline" size="lg">
-                Ver todas las categorias
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+          <div className="mt-8 text-center">
+            <Link href="/productos" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+              Ver todo el catalogo <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section aria-label="Testimonios" className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Confian en nosotros
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Lo que dicen nuestros creativos
-            </p>
+      {/* Testimonials — editorial style instead of cards */}
+      <section aria-label="Testimonios" className="border-b bg-muted/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+          <div className="flex flex-col gap-2 mb-12">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Confian en nosotros</h2>
+            <p className="text-muted-foreground">Lo que dicen nuestros creativos</p>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3">
             {[
               {
                 quote: 'La suscripcion me ha ahorrado cientos de horas. Los UI Kits son de una calidad increible.',
@@ -162,35 +204,35 @@ export default function HomePage() {
                 role: 'Disenadora grafica',
               },
             ].map((testimonial, i) => (
-              <Card key={i} className="h-full">
-                <CardContent className="pt-6">
-                  <div className="flex gap-1 mb-4" role="img" aria-label="5 de 5 estrellas">
-                    {[...Array(5)].map((_, j) => (
-                      <Star key={j} className="h-5 w-5 fill-warning text-warning" aria-hidden="true" />
-                    ))}
-                  </div>
-                  <p className="mb-6 text-muted-foreground">&quot;{testimonial.quote}&quot;</p>
-                  <div>
-                    <p className="font-medium">{testimonial.author}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <figure key={i} className="flex flex-col gap-4">
+                <div className="flex gap-0.5" role="img" aria-label="5 de 5 estrellas">
+                  {[...Array(5)].map((_, j) => (
+                    <Star key={j} className="h-4 w-4 fill-warning text-warning" aria-hidden="true" />
+                  ))}
+                </div>
+                <blockquote className="text-muted-foreground leading-relaxed">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </blockquote>
+                <figcaption>
+                  <p className="text-sm font-medium">{testimonial.author}</p>
+                  <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                </figcaption>
+              </figure>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section aria-label="Llamada a la accion" className="py-20 bg-primary">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl">
+      <section aria-label="Llamada a la accion" className="bg-primary text-primary-foreground">
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:py-20">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ letterSpacing: '-0.02em' }}>
             Listo para acelerar tu workflow?
           </h2>
-          <p className="mt-4 text-lg text-primary-foreground/80">
+          <p className="mt-4 text-primary-foreground/80">
             Unete a miles de creativos que ya usan Dchiripa Store. Cancela cuando quieras.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/auth/register">
               <Button size="lg" className="w-full sm:w-auto gap-2" variant="secondary">
                 Empezar gratis
