@@ -22,6 +22,29 @@ async function getFeaturedProducts() {
   }
 }
 
+async function getCategories() {
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      select: { tags: true },
+    })
+
+    const tagMap = new Map<string, number>()
+    for (const product of products) {
+      for (const tag of product.tags) {
+        tagMap.set(tag, (tagMap.get(tag) || 0) + 1)
+      }
+    }
+
+    return Array.from(tagMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+  } catch {
+    return []
+  }
+}
+
 function formatPrice(price: number, currency: string) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency }).format(price / 100)
 }
@@ -49,17 +72,8 @@ const features = [
   },
 ]
 
-const categories = [
-  { name: 'UI Kits', slug: 'ui-kits', count: 'Plantillas de interfaz' },
-  { name: 'Branding', slug: 'branding', count: 'Identidad visual' },
-  { name: 'Mockups', slug: 'mockups', count: 'Presentaciones realistas' },
-  { name: 'Plantillas Web', slug: 'plantillas-web', count: 'Sitios y landing pages' },
-  { name: 'Motion Graphics', slug: 'motion-graphics', count: 'Animaciones y video' },
-  { name: 'Ilustraciones', slug: 'ilustraciones', count: 'Arte digital' },
-]
-
 export default async function HomePage() {
-  const products = await getFeaturedProducts()
+  const [products, categories] = await Promise.all([getFeaturedProducts(), getCategories()])
 
   return (
     <div className="flex flex-col">
@@ -159,18 +173,22 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Categorias populares</h2>
             <p className="text-muted-foreground">Encuentra exactamente lo que buscas</p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {categories.map((category) => (
-              <Link
-                key={category.name}
-                href={`/productos?tag=${category.slug}`}
-                className="group flex flex-col items-center gap-2 rounded-lg border p-5 text-center transition-all hover:border-primary hover:bg-primary/5"
-              >
-                <span className="text-sm font-semibold group-hover:text-primary transition-colors">{category.name}</span>
-                <span className="text-xs text-muted-foreground">{category.count}</span>
-              </Link>
-            ))}
-          </div>
+          {categories.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {categories.map((category) => (
+                <Link
+                  key={category.name}
+                  href={`/productos?tag=${encodeURIComponent(category.name)}`}
+                  className="group flex flex-col items-center gap-2 rounded-lg border p-5 text-center transition-all hover:border-primary hover:bg-primary/5"
+                >
+                  <span className="text-sm font-semibold group-hover:text-primary transition-colors">{category.name}</span>
+                  <span className="text-xs text-muted-foreground">{category.count} {category.count === 1 ? 'producto' : 'productos'}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground">Crea categorias desde el panel de administracion</p>
+          )}
           <div className="mt-8 text-center">
             <Link href="/productos" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
               Ver todo el catalogo <ArrowRight className="h-3 w-3" />

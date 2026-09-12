@@ -97,3 +97,30 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const admin = await requireAdminSession(request)
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
+    const { name } = await request.json()
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Nombre requerido' }, { status: 400 })
+    }
+
+    const trimmed = name.trim()
+
+    const existing = await prisma.product.findFirst({
+      where: { tags: { has: trimmed } },
+    })
+
+    if (existing) {
+      return NextResponse.json({ error: 'La etiqueta ya existe' }, { status: 400 })
+    }
+
+    return NextResponse.json({ ok: true, name: trimmed })
+  } catch {
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}

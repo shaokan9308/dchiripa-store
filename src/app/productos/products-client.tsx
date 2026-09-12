@@ -14,37 +14,38 @@ import {
 import { ProductCard } from '@/components/product-card'
 import { authClient } from '@/lib/auth-client'
 
-const categories = [
-  'UI Kits',
-  'Branding',
-  'Ilustraciones',
-  'Plantillas Web',
-  'Motion Graphics',
-  'Mockups',
-  'Iconos',
-  'Fuentes',
-]
-
 export default function ProductsClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
-  const [category, setCategory] = useState(searchParams.get('category') || '')
+  const [tag, setTag] = useState(searchParams.get('tag') || '')
   const [sort, setSort] = useState(searchParams.get('sort') || 'newest')
   const [page, setPage] = useState<number>(parseInt(searchParams.get('page') || '1'))
+  const [availableTags, setAvailableTags] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/tags')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAvailableTags(data.map((t: { name: string }) => t.name))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     const params = new URLSearchParams()
     if (search) params.set('search', search)
-    if (category) params.set('category', category)
+    if (tag) params.set('tag', tag)
     if (sort !== 'newest') params.set('sort', sort)
     router.push(`/productos?${params.toString()}`)
   }
 
   const clearFilters = () => {
     setSearch('')
-    setCategory('')
+    setTag('')
     setSort('newest')
     router.push('/productos')
   }
@@ -59,112 +60,100 @@ export default function ProductsClient() {
               Encuentra los recursos perfectos para tu próximo proyecto
             </p>
           </div>
-
-          <form onSubmit={handleSearch} className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                data-search-input
-                placeholder="Buscar productos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-                aria-label="Buscar productos"
-              />
-            </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Categoría
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className={category === '' ? 'bg-accent' : ''}
-                  onClick={() => setCategory('')}
-                >
-                  Todas las categorías
-                </DropdownMenuItem>
-                {categories.map((cat) => (
-                  <DropdownMenuItem
-                    key={cat}
-                    className={category === cat.toLowerCase() ? 'bg-accent' : ''}
-                    onClick={() => setCategory(cat.toLowerCase())}
-                  >
-                    {cat}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  Ordenar
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSort('newest')}>Más nuevos</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSort('price_asc')}>Precio: menor a mayor</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSort('price_desc')}>Precio: mayor a menor</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSort('popular')}>Más populares</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {(search || category) && (
-              <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-1" />
-                Limpiar
-              </Button>
-            )}
-          </form>
         </div>
 
-        <ProductsList
-          search={search}
-          category={category}
-          sort={sort}
-          page={page}
-          setPage={setPage}
-        />
+        <form onSubmit={handleSearch} className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              data-search-input
+              placeholder="Buscar productos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+              aria-label="Buscar productos"
+            />
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                {tag || 'Todas las categorías'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className={tag === '' ? 'bg-accent' : ''}
+                onClick={() => setTag('')}
+              >
+                Todas las categorías
+              </DropdownMenuItem>
+              {availableTags.map((t) => (
+                <DropdownMenuItem
+                  key={t}
+                  className={tag === t ? 'bg-accent' : ''}
+                  onClick={() => setTag(t)}
+                >
+                  {t}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Ordenar
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem className={sort === 'newest' ? 'bg-accent' : ''} onClick={() => setSort('newest')}>Más recientes</DropdownMenuItem>
+              <DropdownMenuItem className={sort === 'oldest' ? 'bg-accent' : ''} onClick={() => setSort('oldest')}>Más antiguos</DropdownMenuItem>
+              <DropdownMenuItem className={sort === 'price_asc' ? 'bg-accent' : ''} onClick={() => setSort('price_asc')}>Precio: menor a mayor</DropdownMenuItem>
+              <DropdownMenuItem className={sort === 'price_desc' ? 'bg-accent' : ''} onClick={() => setSort('price_desc')}>Precio: mayor a menor</DropdownMenuItem>
+              <DropdownMenuItem className={sort === 'name' ? 'bg-accent' : ''} onClick={() => setSort('name')}>Nombre A-Z</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {(search || tag || sort !== 'newest') && (
+            <Button type="button" variant="ghost" onClick={clearFilters} className="gap-1">
+              <X className="h-4 w-4" />
+              Limpiar
+            </Button>
+          )}
+        </form>
+
+        <div className="mt-8">
+          <ProductsList
+            search={search}
+            tag={tag}
+            sort={sort}
+            page={page}
+            setPage={setPage}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-interface Product {
-  id: string
-  name: string
-  slug: string
-  description: string
-  price: number
-  currency: string
-  images: string[]
-  tags: string[]
-  fileKeys: string[]
-  isActive: boolean
-  accessType: string
-  createdAt: string
-}
-
 function ProductsList({
   search,
-  category,
+  tag,
   sort,
   page,
   setPage,
 }: {
   search: string
-  category: string
+  tag: string
   sort: string
   page: number
   setPage: (page: number) => void
 }) {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [totalPages, setTotalPages] = useState(1)
   const [hasSubscription, setHasSubscription] = useState(false)
@@ -177,7 +166,7 @@ function ProductsList({
           page: page.toString(),
           limit: '12',
           ...(search && { search }),
-          ...(category && { category }),
+          ...(tag && { tag }),
           ...(sort && { sort }),
         })
         const res = await fetch(`/api/products?${params}`)
@@ -191,7 +180,7 @@ function ProductsList({
       }
     }
     fetchProducts()
-  }, [search, category, sort, page])
+  }, [search, tag, sort, page])
 
   useEffect(() => {
     fetch('/api/dashboard/subscription')
@@ -203,64 +192,59 @@ function ProductsList({
       .catch(() => {})
   }, [])
 
-  return (
-    <div>
-      {loading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : products.length === 0 ? (
-        <div className="py-16 text-center">
-          <p className="text-muted-foreground">No se encontraron productos</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} hasSubscription={hasSubscription} />
-            ))}
+  if (loading) {
+    return (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+            <div className="aspect-square bg-muted animate-pulse rounded" />
+            <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+            <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
           </div>
+        ))}
+      </div>
+    )
+  }
 
-          {totalPages > 1 && (
-            <nav aria-label="Paginacion" className="mt-8 flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                aria-label="Pagina anterior"
-              >
-                Anterior
-              </Button>
-              <span className="text-sm text-muted-foreground" aria-live="polite">
-                Pagina {page} de {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                aria-label="Pagina siguiente"
-              >
-                Siguiente
-              </Button>
-            </nav>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
+  if (products.length === 0) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-muted-foreground">No se encontraron productos</p>
+      </div>
+    )
+  }
 
-function ProductCardSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="aspect-square w-full rounded-lg bg-muted animate-pulse" />
-      <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-      <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
-      <div className="h-6 w-24 rounded bg-muted animate-pulse" />
-    </div>
+    <>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} hasSubscription={hasSubscription} />
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <nav aria-label="Paginación" className="mt-8 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+          >
+            Anterior
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Página {page} de {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+          >
+            Siguiente
+          </Button>
+        </nav>
+      )}
+    </>
   )
 }
