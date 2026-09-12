@@ -21,6 +21,10 @@ export async function POST(request: Request) {
       }
     }
 
+    if (mode === 'subscription' && !priceId) {
+      return NextResponse.json({ error: 'Plan de suscripcion invalido' }, { status: 400 })
+    }
+
     if (!priceId && mode !== 'subscription') {
       return NextResponse.json({ error: 'Modo invalido' }, { status: 400 })
     }

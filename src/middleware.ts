@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = getClientIp(request)
 
-  if (pathname.startsWith('/api/auth/') || pathname.startsWith('/api/auth/')) {
+  if (pathname.startsWith('/api/auth/') || pathname.startsWith('/api/user/')) {
     const key = getRateLimitKey(ip, 'auth')
     if (!checkRateLimit(key, 10, 60000)) {
       return NextResponse.json({ error: 'Demasiadas peticiones' }, { status: 429 })

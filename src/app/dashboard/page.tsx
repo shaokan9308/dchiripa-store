@@ -22,8 +22,8 @@ export default function DashboardPage() {
     spent: 0,
   })
   const [loading, setLoading] = useState(true)
-  const [recentPurchases, setRecentPurchases] = useState<any[]>([])
-  const [recentDownloads, setRecentDownloads] = useState<any[]>([])
+  const [recentPurchases, setRecentPurchases] = useState<Array<{ id: string; product: { images: string[]; name: string; slug: string }; amount: number; currency: string; createdAt: string }>>([])
+  const [recentDownloads, setRecentDownloads] = useState<Array<{ id: string; product: { name: string; slug: string }; createdAt: string }>>([])
 
   useEffect(() => {
     fetchDashboardData()
@@ -118,7 +118,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {recentPurchases.map((purchase: { id: string; product: { images: string[]; name: string; slug: string }; amount: number; currency: string; createdAt: string }) => (
+                {recentPurchases.map((purchase) => (
                   <div key={purchase.id} className="flex items-center justify-between py-3 border-b last:border-0">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
@@ -158,7 +158,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {recentDownloads.map((download: { id: string; product: { name: string; slug: string }; createdAt: string }) => (
+                {recentDownloads.map((download) => (
                   <div key={download.id} className="flex items-center justify-between py-3 border-b last:border-0">
                     <div className="flex items-center gap-4">
                       <Download className="h-8 w-8 text-primary" />

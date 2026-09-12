@@ -27,7 +27,7 @@ const nextConfig = {
           "default-src 'self'",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://m.stripe.network",
           "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https://*.r2.dev https://pub-*.r2.dev",
+          "img-src 'self' data: blob: https://*.r2.dev https://pub-*.r2.dev https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
           "font-src 'self'",
           "connect-src 'self' https://api.stripe.com https://m.stripe.network",
           "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",

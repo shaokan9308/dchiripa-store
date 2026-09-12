@@ -110,6 +110,7 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Error al eliminar')
       }
       toast({ title: 'Cuenta eliminada', description: 'Tu cuenta ha sido eliminada permanentemente' })
+      setTimeout(() => window.location.replace('/auth/login'), 1000)
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'No se pudo eliminar la cuenta', variant: 'destructive' })
     } finally {
