@@ -129,7 +129,7 @@ export default function PricingPage() {
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm">
                       {feature.included ? (
-                        <Check className="h-5 w-5 text-green-500 shrink-0" />
+                        <Check className="h-5 w-5 text-success shrink-0" />
                       ) : (
                         <X className="h-5 w-5 text-muted-foreground shrink-0" />
                       )}
@@ -175,13 +175,13 @@ export default function PricingPage() {
                     <td className="py-4">{row.feature}</td>
                     <td className="py-4 text-center">
                       {row.free ? (
-                        <Check className="h-5 w-5 text-green-500 mx-auto" />
+                        <Check className="h-5 w-5 text-success mx-auto" />
                       ) : (
                         <X className="h-5 w-5 text-muted-foreground mx-auto" />
                       )}
                     </td>
                     <td className="py-4 text-center">
-                      <Check className="h-5 w-5 text-green-500 mx-auto" />
+                      <Check className="h-5 w-5 text-success mx-auto" />
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Package, Download, CreditCard, Clock, ArrowUpRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -123,7 +124,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
                         {purchase.product.images[0] ? (
-                          <img src={purchase.product.images[0]} alt={purchase.product.name} className="h-full w-full object-cover" />
+                          <Image src={purchase.product.images[0]} alt={purchase.product.name} width={48} height={48} className="h-12 w-12 rounded object-cover" />
                         ) : (
                           <Package className="h-6 w-6 text-muted-foreground" />
                         )}
@@ -196,12 +197,12 @@ function StatCard({
 }) {
   const variants = {
     default: '',
-    success: '',
-    warning: '',
+    success: 'border-l-2 border-l-success',
+    warning: 'border-l-2 border-l-warning',
   }
 
   return (
-    <Card>
+    <Card className={variants[variant]}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-5 w-5 text-muted-foreground" />

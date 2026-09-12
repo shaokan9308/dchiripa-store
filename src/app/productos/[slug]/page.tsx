@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import Image from 'next/image'
 import { Download, Check, Star, FileCode, Layers, Archive, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
@@ -188,11 +189,13 @@ export default function ProductDetailPage() {
             onMouseLeave={() => setPaused(false)}
           >
             <div className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
-              <img
+              <Image
                 src={product.images[currentImage] || '/placeholder-product.jpg'}
                 alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }}
-                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                className="object-cover transition-opacity duration-500"
               />
 
               {totalImages > 1 && (
@@ -241,7 +244,7 @@ export default function ProductDetailPage() {
                         : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} ${i + 1}`} loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }} className="absolute inset-0 w-full h-full object-cover" />
+                    <Image src={img} alt={`${product.name} ${i + 1}`} fill sizes="80px" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }} className="object-cover" />
                   </button>
                 ))}
               </div>

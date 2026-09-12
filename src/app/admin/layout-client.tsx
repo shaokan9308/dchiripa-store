@@ -57,7 +57,7 @@ export default function AdminLayoutClient({
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 p-4">
+          <nav className="flex-1 space-y-1 p-4" aria-label="Navegacion de administracion">
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
               return (

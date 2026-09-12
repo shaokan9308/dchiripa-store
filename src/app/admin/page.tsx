@@ -102,7 +102,7 @@ export default async function AdminDashboard() {
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Suscripciones</CardTitle>
-            <CreditCard className="h-5 w-5 text-purple-600" />
+            <CreditCard className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{activeSubscriptions}</div>

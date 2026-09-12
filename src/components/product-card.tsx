@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ShoppingBag, Download, Crown } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -80,12 +81,13 @@ export function ProductCard({ product, hasSubscription = false }: ProductCardPro
     <Card className="flex flex-col h-full group">
       <Link href={`/productos/${product.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden rounded-t-lg">
-          <img
+          <Image
             src={imageUrl}
             alt={product.name}
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {isSubscription && (
             <div className="absolute top-2 right-2">

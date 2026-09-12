@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Download, Package, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -88,7 +89,7 @@ export default function PurchasesPage() {
                     <Link href={`/productos/${purchase.product.slug}`} className="flex items-center gap-4">
                       <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                         {purchase.product.images[0] ? (
-                          <img src={purchase.product.images[0]} alt={purchase.product.name} className="h-full w-full object-cover" />
+                          <Image src={purchase.product.images[0]} alt={purchase.product.name} width={48} height={48} className="h-12 w-12 rounded object-cover" />
                         ) : (
                           <Package className="h-8 w-8 text-muted-foreground" />
                         )}

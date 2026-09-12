@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Download, RefreshCw, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -77,7 +78,7 @@ export default function DownloadsPage() {
                     <Link href={`/productos/${download.product.slug}`} className="flex items-center gap-4">
                       <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                         {download.product.images[0] ? (
-                          <img src={download.product.images[0]} alt={download.product.name} className="h-full w-full object-cover" />
+                          <Image src={download.product.images[0]} alt={download.product.name} width={48} height={48} className="h-12 w-12 rounded object-cover" />
                         ) : (
                           <Download className="h-8 w-8 text-muted-foreground" />
                         )}

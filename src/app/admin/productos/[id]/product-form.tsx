@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -303,7 +304,7 @@ export default function ProductForm({ product }: { product?: Product }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {form.images.map((url, i) => (
                 <div key={url} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
-                  <img src={url} alt={`Imagen ${i + 1}`} className="w-full h-full object-cover" />
+                  <Image src={url} alt={`Imagen ${i + 1}`} fill sizes="(max-width: 640px) 50vw, 33vw" className="object-cover" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                     <Button
                       type="button"

@@ -154,7 +154,7 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Current Plan */}
-      <Card className={isActive ? 'border-l-4 border-green-500' : isPastDue ? 'border-l-4 border-yellow-500' : ''}>
+      <Card className={isActive ? 'border-l-4 border-l-success' : isPastDue ? 'border-l-4 border-l-warning' : ''}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -199,7 +199,7 @@ export default function SubscriptionPage() {
                   </div>
                 </div>
                 {subscription.isManual && (
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Manual
                   </Badge>
                 )}
@@ -274,7 +274,7 @@ export default function SubscriptionPage() {
                       <ul className="space-y-3 mb-6">
                         {plan.features.map((feature, i) => (
                           <li key={i} className="flex items-center gap-2 text-sm">
-                            <Check className="h-5 w-5 text-green-500 shrink-0" />
+                            <Check className="h-5 w-5 text-success shrink-0" />
                             {feature}
                           </li>
                         ))}
