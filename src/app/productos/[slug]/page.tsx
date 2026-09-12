@@ -200,14 +200,14 @@ export default function ProductDetailPage() {
                   <button
                     onClick={prevImage}
                     aria-label="Imagen anterior"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={nextImage}
                     aria-label="Imagen siguiente"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
@@ -218,7 +218,7 @@ export default function ProductDetailPage() {
                         key={i}
                         onClick={() => setCurrentImage(i)}
                         aria-label={`Ir a imagen ${i + 1}`}
-                        aria-current={i === currentImage ? 'true' : undefined}
+                        aria-current={i === currentImage ? 'step' : undefined}
                         className={`w-2 h-2 rounded-full transition-all ${
                           i === currentImage ? 'bg-white w-4' : 'bg-white/50'
                         }`}
@@ -241,7 +241,7 @@ export default function ProductDetailPage() {
                         : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} ${i + 1}`} onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }} className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={img} alt={`${product.name} ${i + 1}`} loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-product.jpg' }} className="absolute inset-0 w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -354,7 +354,7 @@ function ProductDetailsTabs({ product }: { product: Product }) {
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Licencia</dt>
-          <dd className="font-medium text-green-600">Comercial ilimitada</dd>
+          <dd className="font-medium text-success">Comercial ilimitada</dd>
         </div>
       </dl>
     </div>

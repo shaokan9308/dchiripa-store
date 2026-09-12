@@ -34,6 +34,9 @@ export default function AdminLayoutClient({
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setSidebarOpen(false)}
+          role="presentation"
+          aria-hidden="true"
         />
       )}
 
@@ -49,7 +52,7 @@ export default function AdminLayoutClient({
               <Shield className="h-5 w-5 text-primary" />
               Admin Panel
             </Link>
-            <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
+            <button className="lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menu">
               <X className="h-6 w-6" />
             </button>
           </div>

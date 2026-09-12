@@ -180,7 +180,7 @@ export default function SubscriptionPage() {
           {isActive && subscription && (
             <div className="space-y-4">
               {/* Countdown Timer */}
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted border">
                 <Clock className="h-6 w-6 text-primary" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Tiempo restante</p>

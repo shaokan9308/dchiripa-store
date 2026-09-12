@@ -59,7 +59,7 @@ export default function DownloadsPage() {
       ) : downloads.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Download className="mx-auto h-12 w-12 mb-4 text-muted-foreground/50" />
+            <Download className="mx-auto h-12 w-12 mb-4 text-muted-foreground/50" aria-hidden="true" />
             <h3 className="text-lg font-medium mb-2">No hay descargas aún</h3>
             <p className="text-muted-foreground mb-6">Tus descargas aparecerán aquí</p>
             <Link href="/dashboard/compras">

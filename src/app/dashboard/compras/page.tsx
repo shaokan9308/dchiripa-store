@@ -70,7 +70,7 @@ export default function PurchasesPage() {
       ) : purchases.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Package className="mx-auto h-12 w-12 mb-4 text-muted-foreground/50" />
+            <Package className="mx-auto h-12 w-12 mb-4 text-muted-foreground/50" aria-hidden="true" />
             <h3 className="text-lg font-medium mb-2">No tienes compras aún</h3>
             <p className="text-muted-foreground mb-6">Cuando compres un archivo, aparecerá aquí</p>
             <Link href="/productos">

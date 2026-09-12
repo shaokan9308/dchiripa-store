@@ -144,12 +144,12 @@ export default function SubscriptionFilters({ subscriptions, statusColors, statu
                             {statusLabels[sub.status] || sub.status}
                           </Badge>
                           {sub.isManual && (
-                            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
                               Manual
                             </Badge>
                           )}
                           {sub.cancelAtPeriodEnd && (
-                            <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
+                            <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
                               Se cancela al finalizar
                             </Badge>
                           )}
@@ -159,7 +159,7 @@ export default function SubscriptionFilters({ subscriptions, statusColors, statu
                           {sub.stripePriceId && <span>ID: {sub.stripePriceId}</span>}
                           <span>Fin: {formatDate(sub.stripeCurrentPeriodEnd)}</span>
                           {sub.status === 'active' && (
-                            <span className={`flex items-center gap-1 font-medium ${countdown.urgent ? 'text-red-600' : 'text-green-600'}`}>
+                            <span className={`flex items-center gap-1 font-medium ${countdown.urgent ? 'text-destructive' : 'text-success'}`}>
                               <Clock className="h-3 w-3" />
                               {countdown.text}
                             </span>

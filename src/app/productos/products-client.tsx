@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ProductCard } from '@/components/product-card'
+import { authClient } from '@/lib/auth-client'
 
 const categories = [
   'UI Kits',
@@ -67,6 +68,7 @@ export default function ProductsClient() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
+                aria-label="Buscar productos"
               />
             </div>
 
@@ -164,6 +166,7 @@ function ProductsList({
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [totalPages, setTotalPages] = useState(1)
+  const [hasSubscription, setHasSubscription] = useState(false)
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -189,6 +192,16 @@ function ProductsList({
     fetchProducts()
   }, [search, category, sort, page])
 
+  useEffect(() => {
+    fetch('/api/dashboard/subscription')
+      .then(r => r.json())
+      .then(data => {
+        const sub = data.subscription
+        setHasSubscription(sub && ['active', 'trialing'].includes(sub.status))
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <div>
       {loading ? (
@@ -205,32 +218,34 @@ function ProductsList({
         <>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} hasSubscription={hasSubscription} />
             ))}
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
+            <nav aria-label="Paginacion" className="mt-8 flex items-center justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
+                aria-label="Pagina anterior"
               >
                 Anterior
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Página {page} de {totalPages}
+              <span className="text-sm text-muted-foreground" aria-live="polite">
+                Pagina {page} de {totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
+                aria-label="Pagina siguiente"
               >
                 Siguiente
               </Button>
-            </div>
+            </nav>
           )}
         </>
       )}

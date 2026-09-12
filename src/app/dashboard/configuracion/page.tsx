@@ -345,7 +345,7 @@ function NotificationToggle({
   description,
   checked,
   onChange,
-  disabled = false,
+  disabled,
 }: {
   label: string
   description: string
@@ -353,15 +353,18 @@ function NotificationToggle({
   onChange: (checked: boolean) => void
   disabled?: boolean
 }) {
+  const id = `toggle-${label.replace(/\s/g, '-').toLowerCase()}`
   return (
     <div className="flex items-center justify-between py-4 border-b last:border-0">
       <div>
-        <p className="font-medium">{label}</p>
+        <Label htmlFor={id} className="font-medium">{label}</Label>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       <button
+        id={id}
         role="switch"
         aria-checked={checked}
+        aria-labelledby={id}
         onClick={() => !disabled && onChange(!checked)}
         disabled={disabled}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
@@ -369,7 +372,7 @@ function NotificationToggle({
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          className={`inline-block h-4 w-4 transform rounded-full bg-primary-foreground transition-transform ${
             checked ? 'translate-x-6' : 'translate-x-1'
           }`}
         />

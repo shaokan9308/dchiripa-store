@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ShoppingBag, Download, Crown } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,24 +23,13 @@ interface ProductCardProps {
     tags: string[]
     accessType: string
   }
+  hasSubscription?: boolean
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, hasSubscription = false }: ProductCardProps) {
   const router = useRouter()
   const { data: session } = authClient.useSession()
   const [buying, setBuying] = useState(false)
-  const [hasSubscription, setHasSubscription] = useState(false)
-
-  useEffect(() => {
-    if (!session || product.accessType !== 'subscription') return
-    fetch('/api/dashboard/subscription')
-      .then(r => r.json())
-      .then(data => {
-        const sub = data.subscription
-        setHasSubscription(sub && ['active', 'trialing'].includes(sub.status))
-      })
-      .catch(() => {})
-  }, [session, product.accessType])
 
   const handlePurchase = async (e: React.MouseEvent) => {
     e.preventDefault()

@@ -110,7 +110,7 @@ export default function DashboardPage() {
           <CardContent>
             {recentPurchases.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <Package className="mx-auto h-12 w-12 mb-4 opacity-50" aria-hidden="true" />
                 <p>No hay compras aún</p>
                 <Link href="/productos" className="text-primary hover:underline mt-2 inline-block">
                   Explorar productos
@@ -153,7 +153,7 @@ export default function DashboardPage() {
           <CardContent>
             {recentDownloads.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <Download className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <Download className="mx-auto h-12 w-12 mb-4 opacity-50" aria-hidden="true" />
                 <p>No hay descargas aún</p>
               </div>
             ) : (
@@ -195,13 +195,13 @@ function StatCard({
   variant?: 'default' | 'success' | 'warning'
 }) {
   const variants = {
-    default: 'border-l-4 border-primary',
-    success: 'border-l-4 border-green-500',
-    warning: 'border-l-4 border-yellow-500',
+    default: '',
+    success: '',
+    warning: '',
   }
 
   return (
-    <Card className={variants[variant]}>
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-5 w-5 text-muted-foreground" />

@@ -40,7 +40,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
+      <section aria-label="Presentacion" className="relative py-20 lg:py-32 overflow-hidden">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <Badge variant="secondary" className="mb-6 text-sm">
@@ -71,7 +71,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="py-20">
+      <section aria-label="Caracteristicas" className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -85,7 +85,7 @@ export default function HomePage() {
             {features.map((feature) => (
               <Card key={feature.title} className="h-full">
                 <CardHeader>
-                  <feature.icon className="mb-4 h-10 w-10 text-primary" />
+                  <feature.icon className="mb-4 h-10 w-10 text-primary" aria-hidden="true" />
                   <CardTitle>{feature.title}</CardTitle>
                   <CardDescription>{feature.description}</CardDescription>
                 </CardHeader>
@@ -96,7 +96,7 @@ export default function HomePage() {
       </section>
 
       {/* Categories */}
-      <section className="py-20 bg-muted/50">
+      <section aria-label="Categorias populares" className="py-20 bg-muted/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -114,7 +114,7 @@ export default function HomePage() {
                 className="group flex items-center gap-4 rounded-lg border p-6 transition-all hover:border-primary hover:bg-background hover:shadow-md"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <category.icon className="h-6 w-6" />
+                  <category.icon className="h-6 w-6" aria-hidden="true" />
                 </div>
                 <div>
                   <h3 className="font-semibold">{category.name}</h3>
@@ -134,7 +134,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20">
+      <section aria-label="Testimonios" className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -164,9 +164,9 @@ export default function HomePage() {
             ].map((testimonial, i) => (
               <Card key={i} className="h-full">
                 <CardContent className="pt-6">
-                  <div className="flex gap-1 mb-4">
+                  <div className="flex gap-1 mb-4" role="img" aria-label="5 de 5 estrellas">
                     {[...Array(5)].map((_, j) => (
-                      <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
                     ))}
                   </div>
                   <p className="mb-6 text-muted-foreground">&quot;{testimonial.quote}&quot;</p>
@@ -182,7 +182,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-primary">
+      <section aria-label="Llamada a la accion" className="py-20 bg-primary">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl">
             Listo para acelerar tu workflow?

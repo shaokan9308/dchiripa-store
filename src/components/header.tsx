@@ -144,14 +144,14 @@ export function Header() {
 
       {mobileMenuOpen && (
         <div id="mobile-menu" className="md:hidden border-t px-4 py-4">
-          <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-1">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'text-base font-medium',
-                  pathname === item.href ? 'text-primary' : 'text-muted-foreground'
+                  'text-base font-medium py-3 px-2 rounded-md min-h-[44px] flex items-center',
+                  pathname === item.href ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:bg-muted'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -162,7 +162,7 @@ export function Header() {
               <>
                 <Link
                   href="/dashboard"
-                  className="text-base font-medium text-muted-foreground hover:text-primary"
+                  className="text-base font-medium text-muted-foreground hover:bg-muted py-3 px-2 rounded-md min-h-[44px] flex items-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Dashboard
@@ -170,28 +170,28 @@ export function Header() {
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="text-base font-medium text-muted-foreground hover:text-primary"
+                    className="text-base font-medium text-muted-foreground hover:bg-muted py-3 px-2 rounded-md min-h-[44px] flex items-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Panel Admin
                   </Link>
                 )}
-                <button onClick={handleSignOut} className="text-left text-base font-medium text-destructive">
-                  Cerrar sesión
+                <button onClick={handleSignOut} className="text-left text-base font-medium text-destructive py-3 px-2 rounded-md min-h-[44px] flex items-center">
+                  Cerrar sesion
                 </button>
               </>
             ) : (
               <>
                 <Link
                   href="/auth/login"
-                  className="text-base font-medium text-muted-foreground hover:text-primary"
+                  className="text-base font-medium text-muted-foreground hover:bg-muted py-3 px-2 rounded-md min-h-[44px] flex items-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Iniciar sesión
+                  Iniciar sesion
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="text-base font-medium text-primary"
+                  className="text-base font-medium text-primary py-3 px-2 rounded-md min-h-[44px] flex items-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Registrarse

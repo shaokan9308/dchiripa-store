@@ -74,28 +74,28 @@ export default async function AdminDashboard() {
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Productos</CardTitle>
-            <Package className="h-5 w-5 text-blue-600" />
+            <Package className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalProducts}</div>
             <p className="text-xs text-muted-foreground mt-1">{activeProducts} activos</p>
           </CardContent>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600/20">
-            <div className="h-full bg-blue-600" style={{ width: `${totalProducts > 0 ? (activeProducts / totalProducts) * 100 : 0}%` }} />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/20">
+            <div className="h-full bg-primary" style={{ width: `${totalProducts > 0 ? (activeProducts / totalProducts) * 100 : 0}%` }} />
           </div>
         </Card>
 
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Usuarios</CardTitle>
-            <Users className="h-5 w-5 text-green-600" />
+            <Users className="h-5 w-5 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">+{newUsersLast30Days} último mes</p>
+            <p className="text-xs text-muted-foreground mt-1">+{newUsersLast30Days} ultimo mes</p>
           </CardContent>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-green-600/20">
-            <div className="h-full bg-green-600" style={{ width: '100%' }} />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-success/20">
+            <div className="h-full bg-success" style={{ width: '100%' }} />
           </div>
         </Card>
 
@@ -116,14 +116,14 @@ export default async function AdminDashboard() {
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos totales</CardTitle>
-            <DollarSign className="h-5 w-5 text-yellow-600" />
+            <DollarSign className="h-5 w-5 text-warning" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{formatCurrency(totalRevenue._sum.amount || 0)}</div>
-            <p className="text-xs text-muted-foreground mt-1">{formatCurrency(revenueLast30Days._sum.amount || 0)} último mes</p>
+            <p className="text-xs text-muted-foreground mt-1">{formatCurrency(revenueLast30Days._sum.amount || 0)} ultimo mes</p>
           </CardContent>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-yellow-600/20">
-            <div className="h-full bg-yellow-600" style={{ width: '100%' }} />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-warning/20">
+            <div className="h-full bg-warning" style={{ width: '100%' }} />
           </div>
         </Card>
       </div>
@@ -148,7 +148,7 @@ export default async function AdminDashboard() {
                       <span className="font-medium">{purchase.user.name || purchase.user.email}</span>
                       <span className="text-xs text-muted-foreground">{purchase.product.name}</span>
                     </div>
-                    <span className="font-medium text-green-600">{formatCurrency(purchase.amount)}</span>
+                    <span className="font-medium text-success">{formatCurrency(purchase.amount)}</span>
                   </div>
                 ))}
               </div>
