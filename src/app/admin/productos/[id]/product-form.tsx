@@ -100,6 +100,16 @@ export default function ProductForm({ product }: { product?: Product }) {
       return
     }
 
+    const tooLarge = imageFiles.filter(f => f.size > 50 * 1024 * 1024)
+    if (tooLarge.length > 0) {
+      toast({
+        title: 'Archivos muy grandes',
+        description: `${tooLarge.length} archivo(s) superan 50MB: ${tooLarge.map(f => f.name).join(', ')}`,
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
