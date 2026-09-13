@@ -49,6 +49,39 @@ export default function ProductForm({ product }: { product?: Product }) {
     accessType: product?.accessType || 'purchase',
   })
 
+  const compressImage = async (file: File, maxWidth = 1920, quality = 0.85): Promise<File> => {
+    if (file.size < 500 * 1024) return file
+
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new window.Image()
+
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width
+          width = maxWidth
+        }
+        canvas.width = width
+        canvas.height = height
+        ctx?.drawImage(img, 0, 0, width, height)
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size < file.size) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+            } else {
+              resolve(file)
+            }
+          },
+          'image/jpeg',
+          quality
+        )
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   const uploadImage = useCallback(async (upload: UploadState): Promise<string | null> => {
     if (!product?.id) {
       console.warn('[UPLOAD] No product ID, skipping')
@@ -58,9 +91,12 @@ export default function ProductForm({ product }: { product?: Product }) {
     console.log('[UPLOAD] Starting upload for:', upload.file.name, 'size:', upload.file.size)
 
     try {
+      const compressed = await compressImage(upload.file)
+      console.log('[UPLOAD] Compressed:', compressed.name, 'size:', compressed.size)
+
       const formData = new FormData()
       formData.append('productId', product.id)
-      formData.append('file', upload.file)
+      formData.append('file', compressed)
 
       setUploads(prev => prev.map(u =>
         u.file === upload.file ? { ...u, progress: 50 } : u
@@ -100,11 +136,11 @@ export default function ProductForm({ product }: { product?: Product }) {
       return
     }
 
-    const tooLarge = imageFiles.filter(f => f.size > 50 * 1024 * 1024)
+    const tooLarge = imageFiles.filter(f => f.size > 20 * 1024 * 1024)
     if (tooLarge.length > 0) {
       toast({
         title: 'Archivos muy grandes',
-        description: `${tooLarge.length} archivo(s) superan 50MB: ${tooLarge.map(f => f.name).join(', ')}`,
+        description: `${tooLarge.length} archivo(s) superan 20MB: ${tooLarge.map(f => f.name).join(', ')}`,
         variant: 'destructive',
       })
       return
