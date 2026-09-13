@@ -11,6 +11,7 @@ import { authClient } from '@/lib/auth-client'
 import { toast } from '@/hooks/use-toast'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 export default function SettingsPage() {
   const { data: session } = authClient.useSession()
@@ -92,7 +93,6 @@ export default function SettingsPage() {
   const [deletePassword, setDeletePassword] = useState('')
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Estas seguro? Esta accion no se puede deshacer.')) return
     if (!deletePassword) {
       toast({ title: 'Error', description: 'Ingresa tu contrasena para confirmar', variant: 'destructive' })
       return
@@ -328,9 +328,27 @@ export default function SettingsPage() {
                   <input type="checkbox" required />
                   <span>Entiendo que esta accion es irreversible</span>
                 </Label>
-                <Button variant="destructive" onClick={handleDeleteAccount} disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar mi cuenta'}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={loading || !deletePassword}>
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar mi cuenta'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Eliminar cuenta permanentemente</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta accion no se puede deshacer. Se eliminiran todos tus datos, compras y suscripciones de forma permanente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Eliminar cuenta
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>

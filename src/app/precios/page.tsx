@@ -4,6 +4,7 @@ import { Check, X, Download, Infinity, Shield, Sparkles, ArrowUpRight } from 'lu
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -147,7 +148,7 @@ export default function PricingPage() {
           <h2 className="text-3xl font-bold tracking-tight text-center mb-10">
             Preguntas frecuentes
           </h2>
-          <div className="space-y-4">
+          <Accordion type="single" collapsible className="space-y-2">
             {[
               {
                 q: '¿Puedo cancelar mi suscripción en cualquier momento?',
@@ -170,16 +171,12 @@ export default function PricingPage() {
                 a: 'Actualmente no tenemos programa de descuentos, pero planeamos lanzarlo pronto. Contacta con nosotros si tienes un caso especial.',
               },
             ].map((faq, i) => (
-              <Card key={i}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <h3 className="font-medium flex-1">{faq.q}</h3>
-                    <p className="text-muted-foreground flex-1">{faq.a}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <AccordionItem key={i} value={`item-${i}`}>
+                <AccordionTrigger className="text-left">{faq.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">{faq.a}</AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </div>
 
         {/* CTA */}

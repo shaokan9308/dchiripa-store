@@ -124,32 +124,60 @@ export default async function HomePage() {
 
             {/* Right: featured products */}
             {products.length > 0 && (
-              <div className="relative hidden lg:block">
-                <div className="grid grid-cols-2 gap-3">
-                  {products.slice(0, 4).map((product, i) => (
+              <>
+                {/* Mobile: horizontal scroll strip */}
+                <div className="flex gap-3 overflow-x-auto pb-2 lg:hidden">
+                  {products.slice(0, 4).map((product) => (
                     <Link
                       key={product.id}
                       href={`/productos/${product.slug}`}
-                      className={`group relative overflow-hidden rounded-lg border bg-muted transition-all hover:shadow-lg ${
-                        i === 0 ? 'row-span-2 aspect-[3/4]' : 'aspect-square'
-                      }`}
+                      className="group relative shrink-0 w-48 overflow-hidden rounded-lg border bg-muted transition-all hover:shadow-lg"
                     >
-                      <Image
-                        src={product.images[0] || '/placeholder-product.jpg'}
-                        alt={product.name}
-                        fill
-                        sizes={i === 0 ? '(max-width: 1024px) 50vw, 33vw' : '(max-width: 1024px) 25vw, 17vw'}
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-sm font-medium text-white truncate">{product.name}</p>
-                        <p className="text-xs text-white/80">{formatPrice(product.price, product.currency)}</p>
+                      <div className="relative aspect-square">
+                        <Image
+                          src={product.images[0] || '/placeholder-product.jpg'}
+                          alt={product.name}
+                          fill
+                          sizes="192px"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-sm font-medium truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatPrice(product.price, product.currency)}</p>
                       </div>
                     </Link>
                   ))}
                 </div>
-              </div>
+
+                {/* Desktop: grid */}
+                <div className="relative hidden lg:block">
+                  <div className="grid grid-cols-2 gap-3">
+                    {products.slice(0, 4).map((product, i) => (
+                      <Link
+                        key={product.id}
+                        href={`/productos/${product.slug}`}
+                        className={`group relative overflow-hidden rounded-lg border bg-muted transition-all hover:shadow-lg ${
+                          i === 0 ? 'row-span-2 aspect-[3/4]' : 'aspect-square'
+                        }`}
+                      >
+                        <Image
+                          src={product.images[0] || '/placeholder-product.jpg'}
+                          alt={product.name}
+                          fill
+                          sizes={i === 0 ? '(max-width: 1024px) 50vw, 33vw' : '(max-width: 1024px) 25vw, 17vw'}
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-sm font-medium text-white truncate">{product.name}</p>
+                          <p className="text-xs text-white/80">{formatPrice(product.price, product.currency)}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

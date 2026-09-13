@@ -41,6 +41,7 @@ export default function ProductDetailPage() {
   const [hasSubscription, setHasSubscription] = useState(false)
   const [currentImage, setCurrentImage] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -98,9 +99,22 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!product || totalImages <= 1 || paused) return
-    const interval = setInterval(nextImage, 3000)
+    const interval = setInterval(nextImage, 6000)
     return () => clearInterval(interval)
   }, [product, totalImages, paused, nextImage])
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const diff = touchStart - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? nextImage() : prevImage()
+    }
+    setTouchStart(null)
+  }
 
   if (loading) {
     return <ProductSkeleton />
@@ -187,6 +201,8 @@ export default function ProductDetailPage() {
             className="space-y-4"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
               <Image
@@ -203,14 +219,14 @@ export default function ProductDetailPage() {
                   <button
                     onClick={prevImage}
                     aria-label="Imagen anterior"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={nextImage}
                     aria-label="Imagen siguiente"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
