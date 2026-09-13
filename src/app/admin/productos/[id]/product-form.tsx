@@ -53,44 +53,31 @@ export default function ProductForm({ product }: { product?: Product }) {
     if (!product?.id) return null
 
     try {
-      const presignRes = await fetch('/api/admin/product-images', {
+      const formData = new FormData()
+      formData.append('productId', product.id)
+      formData.append('file', upload.file)
+
+      setUploads(prev => prev.map(u =>
+        u.file === upload.file ? { ...u, progress: 50 } : u
+      ))
+
+      const res = await fetch('/api/admin/product-images', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: product.id,
-          fileName: upload.file.name,
-          contentType: upload.file.type,
-        }),
+        body: formData,
       })
 
-      if (!presignRes.ok) {
-        const err = await presignRes.json().catch(() => ({ error: 'Error al preparar upload' }))
-        console.error('[PRESIGN ERROR]', err)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Error al subir imagen' }))
+        console.error('[UPLOAD ERROR]', err)
         return null
       }
-      const { uploadUrl, publicUrl } = await presignRes.json()
 
-      const xhr = new XMLHttpRequest()
-      const url = await new Promise<string>((resolve, reject) => {
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100)
-            setUploads(prev => prev.map(u =>
-              u.file === upload.file ? { ...u, progress: pct } : u
-            ))
-          }
-        }
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve(publicUrl)
-          else reject(new Error(`R2 error: ${xhr.status}`))
-        }
-        xhr.onerror = () => reject(new Error('Error de red al subir a R2'))
-        xhr.open('PUT', uploadUrl)
-        xhr.setRequestHeader('Content-Type', upload.file.type)
-        xhr.send(upload.file)
-      })
+      const { publicUrl } = await res.json()
+      setUploads(prev => prev.map(u =>
+        u.file === upload.file ? { ...u, progress: 100 } : u
+      ))
 
-      return url
+      return publicUrl
     } catch (e) {
       console.error('[UPLOAD ERROR]', upload.file.name, e)
       return null
