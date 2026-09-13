@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { uploadFile, deleteFile } from '@/lib/r2'
+import { getSignedUploadUrl, deleteFile } from '@/lib/r2'
 import { NextResponse } from 'next/server'
 
 async function requireAdminSession(request: Request) {
@@ -16,24 +16,22 @@ export async function POST(request: Request) {
     const admin = await requireAdminSession(request)
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-    const formData = await request.formData()
-    const productId = formData.get('productId') as string
-    const file = formData.get('file') as File
+    const { productId, fileName, contentType } = await request.json()
 
-    if (!productId || !file) {
-      return NextResponse.json({ error: 'Faltan parametros', status: 400 }, { status: 400 })
+    if (!productId || !fileName) {
+      return NextResponse.json({ error: 'Faltan parametros' }, { status: 400 })
     }
 
     const product = await prisma.product.findUnique({ where: { id: productId } })
     if (!product) return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 })
 
-    const key = `products/${product.slug}/images/${Date.now()}-${file.name}`
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const publicUrl = await uploadFile(key, buffer, file.type || 'image/jpeg')
+    const key = `products/${product.slug}/images/${Date.now()}-${fileName}`
+    const uploadUrl = await getSignedUploadUrl(key, contentType || 'image/jpeg', 3600)
+    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`
 
-    return NextResponse.json({ key, publicUrl })
+    return NextResponse.json({ key, uploadUrl, publicUrl })
   } catch (e) {
-    console.error('[PRODUCT IMAGES UPLOAD]', e)
+    console.error('[PRODUCT IMAGES PRESIGN]', e)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

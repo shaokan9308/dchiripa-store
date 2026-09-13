@@ -49,80 +49,48 @@ export default function ProductForm({ product }: { product?: Product }) {
     accessType: product?.accessType || 'purchase',
   })
 
-  const compressImage = async (file: File, maxWidth = 1920, quality = 0.85): Promise<File> => {
-    if (file.size < 500 * 1024) return file
-
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      const img = new window.Image()
-
-      img.onload = () => {
-        let { width, height } = img
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width
-          width = maxWidth
-        }
-        canvas.width = width
-        canvas.height = height
-        ctx?.drawImage(img, 0, 0, width, height)
-        canvas.toBlob(
-          (blob) => {
-            if (blob && blob.size < file.size) {
-              resolve(new File([blob], file.name, { type: 'image/jpeg' }))
-            } else {
-              resolve(file)
-            }
-          },
-          'image/jpeg',
-          quality
-        )
-      }
-      img.src = URL.createObjectURL(file)
-    })
-  }
-
   const uploadImage = useCallback(async (upload: UploadState): Promise<string | null> => {
-    if (!product?.id) {
-      console.warn('[UPLOAD] No product ID, skipping')
-      return null
-    }
-
-    console.log('[UPLOAD] Starting upload for:', upload.file.name, 'size:', upload.file.size)
+    if (!product?.id) return null
 
     try {
-      const compressed = await compressImage(upload.file)
-      console.log('[UPLOAD] Compressed:', compressed.name, 'size:', compressed.size)
-
-      const formData = new FormData()
-      formData.append('productId', product.id)
-      formData.append('file', compressed)
-
-      setUploads(prev => prev.map(u =>
-        u.file === upload.file ? { ...u, progress: 50 } : u
-      ))
-
-      console.log('[UPLOAD] Sending to /api/admin/product-images...')
-      const res = await fetch('/api/admin/product-images', {
+      const presignRes = await fetch('/api/admin/product-images', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product.id,
+          fileName: upload.file.name,
+          contentType: upload.file.type,
+        }),
       })
 
-      console.log('[UPLOAD] Response status:', res.status)
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Error al subir imagen' }))
-        console.error('[UPLOAD ERROR]', res.status, err)
+      if (!presignRes.ok) {
+        const err = await presignRes.json().catch(() => ({ error: 'Error al preparar upload' }))
+        console.error('[PRESIGN ERROR]', err)
         return null
       }
+      const { uploadUrl, publicUrl } = await presignRes.json()
 
-      const { publicUrl } = await res.json()
-      console.log('[UPLOAD] Success:', publicUrl)
-      setUploads(prev => prev.map(u =>
-        u.file === upload.file ? { ...u, progress: 100 } : u
-      ))
+      const xhr = new XMLHttpRequest()
+      const url = await new Promise<string>((resolve, reject) => {
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100)
+            setUploads(prev => prev.map(u =>
+              u.file === upload.file ? { ...u, progress: pct } : u
+            ))
+          }
+        }
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(publicUrl)
+          else reject(new Error(`R2 error: ${xhr.status}`))
+        }
+        xhr.onerror = () => reject(new Error('Upload failed'))
+        xhr.open('PUT', uploadUrl)
+        xhr.setRequestHeader('Content-Type', upload.file.type)
+        xhr.send(upload.file)
+      })
 
-      return publicUrl
+      return url
     } catch (e) {
       console.error('[UPLOAD ERROR]', upload.file.name, e)
       return null
@@ -133,16 +101,6 @@ export default function ProductForm({ product }: { product?: Product }) {
     const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
     if (imageFiles.length === 0) {
       toast({ title: 'Error', description: 'Solo se permiten archivos de imagen', variant: 'destructive' })
-      return
-    }
-
-    const tooLarge = imageFiles.filter(f => f.size > 20 * 1024 * 1024)
-    if (tooLarge.length > 0) {
-      toast({
-        title: 'Archivos muy grandes',
-        description: `${tooLarge.length} archivo(s) superan 20MB: ${tooLarge.map(f => f.name).join(', ')}`,
-        variant: 'destructive',
-      })
       return
     }
 
