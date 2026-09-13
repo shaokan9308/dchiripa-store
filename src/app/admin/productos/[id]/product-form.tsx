@@ -63,7 +63,11 @@ export default function ProductForm({ product }: { product?: Product }) {
         }),
       })
 
-      if (!presignRes.ok) throw new Error('Error al preparar upload')
+      if (!presignRes.ok) {
+        const err = await presignRes.json().catch(() => ({ error: 'Error al preparar upload' }))
+        console.error('[PRESIGN ERROR]', err)
+        return null
+      }
       const { uploadUrl, publicUrl } = await presignRes.json()
 
       const xhr = new XMLHttpRequest()
@@ -78,16 +82,17 @@ export default function ProductForm({ product }: { product?: Product }) {
         }
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) resolve(publicUrl)
-          else reject(new Error('Upload failed'))
+          else reject(new Error(`R2 error: ${xhr.status}`))
         }
-        xhr.onerror = () => reject(new Error('Upload failed'))
+        xhr.onerror = () => reject(new Error('Error de red al subir a R2'))
         xhr.open('PUT', uploadUrl)
         xhr.setRequestHeader('Content-Type', upload.file.type)
         xhr.send(upload.file)
       })
 
       return url
-    } catch {
+    } catch (e) {
+      console.error('[UPLOAD ERROR]', upload.file.name, e)
       return null
     }
   }, [product?.id])
@@ -99,6 +104,10 @@ export default function ProductForm({ product }: { product?: Product }) {
       return
     }
 
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+
     const newUploads: UploadState[] = imageFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file),
@@ -107,6 +116,9 @@ export default function ProductForm({ product }: { product?: Product }) {
     }))
 
     setUploads(prev => [...prev, ...newUploads])
+
+    let successCount = 0
+    let errorCount = 0
 
     for (const upload of newUploads) {
       setUploads(prev => prev.map(u =>
@@ -120,11 +132,21 @@ export default function ProductForm({ product }: { product?: Product }) {
           u.file === upload.file ? { ...u, status: 'done', url } : u
         ))
         setForm(f => ({ ...f, images: [...f.images, url] }))
+        successCount++
       } else {
         setUploads(prev => prev.map(u =>
           u.file === upload.file ? { ...u, status: 'error' } : u
         ))
+        errorCount++
       }
+    }
+
+    if (errorCount > 0) {
+      toast({
+        title: 'Algunas imagenes fallaron',
+        description: `${successCount} subidas, ${errorCount} con error. Intenta de nuevo.`,
+        variant: 'destructive',
+      })
     }
   }
 
@@ -372,12 +394,13 @@ export default function ProductForm({ product }: { product?: Product }) {
           </div>
 
           {/* Upload progress */}
-          {uploads.filter(u => u.status !== 'done').length > 0 && (
+          {uploads.length > 0 && (
             <div className="space-y-2">
-              {uploads.map((u, i) => u.status !== 'done' && (
+              {uploads.map((u, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
                   <ImageIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="truncate flex-1">{u.file.name}</span>
+                  {u.status === 'pending' && <span className="text-muted-foreground">En cola...</span>}
                   {u.status === 'uploading' && (
                     <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
@@ -386,10 +409,15 @@ export default function ProductForm({ product }: { product?: Product }) {
                       />
                     </div>
                   )}
-                  {u.status === 'error' && <span className="text-destructive">Error</span>}
-                  <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => removeUpload(i)}>
-                    <X className="h-3 w-3" />
-                  </Button>
+                  {u.status === 'done' && <span className="text-success text-xs">Listo</span>}
+                  {u.status === 'error' && (
+                    <span className="text-destructive text-xs">Error</span>
+                  )}
+                  {(u.status === 'error' || u.status === 'pending') && (
+                    <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => removeUpload(i)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
