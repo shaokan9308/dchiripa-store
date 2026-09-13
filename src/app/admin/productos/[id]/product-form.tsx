@@ -50,7 +50,12 @@ export default function ProductForm({ product }: { product?: Product }) {
   })
 
   const uploadImage = useCallback(async (upload: UploadState): Promise<string | null> => {
-    if (!product?.id) return null
+    if (!product?.id) {
+      console.warn('[UPLOAD] No product ID, skipping')
+      return null
+    }
+
+    console.log('[UPLOAD] Starting upload for:', upload.file.name, 'size:', upload.file.size)
 
     try {
       const formData = new FormData()
@@ -61,18 +66,22 @@ export default function ProductForm({ product }: { product?: Product }) {
         u.file === upload.file ? { ...u, progress: 50 } : u
       ))
 
+      console.log('[UPLOAD] Sending to /api/admin/product-images...')
       const res = await fetch('/api/admin/product-images', {
         method: 'POST',
         body: formData,
       })
 
+      console.log('[UPLOAD] Response status:', res.status)
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Error al subir imagen' }))
-        console.error('[UPLOAD ERROR]', err)
+        console.error('[UPLOAD ERROR]', res.status, err)
         return null
       }
 
       const { publicUrl } = await res.json()
+      console.log('[UPLOAD] Success:', publicUrl)
       setUploads(prev => prev.map(u =>
         u.file === upload.file ? { ...u, progress: 100 } : u
       ))
@@ -194,8 +203,8 @@ export default function ProductForm({ product }: { product?: Product }) {
       if (res.ok) {
         const data = await res.json()
         if (!product && data.id) {
-          toast({ title: 'Producto creado', description: 'Redirigiendo para subir imagenes...' })
-          router.push(`/admin/productos/${data.id}/archivos`)
+          toast({ title: 'Producto creado', description: 'Ahora puedes subir las imagenes' })
+          router.push(`/admin/productos/${data.id}`)
           router.refresh()
         } else {
           router.push('/admin/productos')
@@ -356,29 +365,39 @@ export default function ProductForm({ product }: { product?: Product }) {
           )}
 
           {/* Upload zone */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-              dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-            }`}
-            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Arrastra imagenes aqui o <span className="text-primary font-medium">haz clic</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP (max 10MB c/u)</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={e => e.target.files && handleFiles(e.target.files)}
-            />
-          </div>
+          {!product?.id ? (
+            <div className="border-2 border-dashed rounded-lg p-8 text-center border-muted-foreground/25 bg-muted/30">
+              <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Guarda el producto primero para poder subir imagenes
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Haz clic en "Guardar" y luego vuelve a editar</p>
+            </div>
+          ) : (
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+                dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+              }`}
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Arrastra imagenes aqui o <span className="text-primary font-medium">haz clic</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP (max 10MB c/u)</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={e => e.target.files && handleFiles(e.target.files)}
+              />
+            </div>
+          )}
 
           {/* Upload progress */}
           {uploads.length > 0 && (
