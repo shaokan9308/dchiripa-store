@@ -70,6 +70,7 @@ export default function ProductFilesPage() {
     if (!presignRes.ok) throw new Error(presignData.error || `Error ${presignRes.status}`)
 
     const { key, uploadUrl } = presignData
+    console.log('[UPLOAD] Presigned URL:', uploadUrl.substring(0, 100) + '...')
 
     // 2. Upload directly to R2
     const uploadRes = await fetch(uploadUrl, {
@@ -80,7 +81,11 @@ export default function ProductFilesPage() {
       },
     })
 
-    if (!uploadRes.ok) throw new Error(`Error al subir a R2 (${uploadRes.status})`)
+    if (!uploadRes.ok) {
+      const errorText = await uploadRes.text().catch(() => '')
+      console.error('[UPLOAD] R2 error:', uploadRes.status, errorText)
+      throw new Error(`Error al subir a R2 (${uploadRes.status}): ${errorText.substring(0, 200)}`)
+    }
 
     // 3. Confirm upload in database
     const confirmRes = await fetch('/api/admin/confirm-upload', {
@@ -121,8 +126,12 @@ export default function ProductFilesPage() {
           idx === uploadIndex ? { ...u, status: 'success' as const, key: key || undefined } : u
         ))
       } catch (err: any) {
+        const errorMsg = err.name === 'TypeError' && err.message.includes('fetch')
+          ? 'Error de CORS o de red. Verifica que CORS este configurado en R2.'
+          : err.message
+        console.error('[UPLOAD FAILED]', err)
         setUploads(prev => prev.map((u, idx) =>
-          idx === uploadIndex ? { ...u, status: 'error' as const, error: err.message } : u
+          idx === uploadIndex ? { ...u, status: 'error' as const, error: errorMsg } : u
         ))
       }
     }
