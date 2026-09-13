@@ -65,7 +65,6 @@ export default function ProductForm({ product }: { product?: Product }) {
 
       if (!presignRes.ok) {
         const err = await presignRes.json().catch(() => ({ error: 'Error al preparar upload' }))
-        console.error('[PRESIGN ERROR]', err)
         return null
       }
       const { uploadUrl, publicUrl } = await presignRes.json()
@@ -91,8 +90,7 @@ export default function ProductForm({ product }: { product?: Product }) {
       })
 
       return url
-    } catch (e) {
-      console.error('[UPLOAD ERROR]', upload.file.name, e)
+    } catch {
       return null
     }
   }, [product?.id])
