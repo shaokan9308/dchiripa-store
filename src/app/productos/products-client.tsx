@@ -14,6 +14,29 @@ import {
 import { ProductCard } from '@/components/product-card'
 import { authClient } from '@/lib/auth-client'
 
+interface TagCount {
+  name: string
+  count: number
+}
+
+const categoryEmoji: Record<string, string> = {
+  'Branding': '🎨',
+  'Social Media': '📱',
+  'UI/UX': '🖥️',
+  'Mockups': '📦',
+  'Ilustracion': '✏️',
+  'Tipografia': '🔤',
+  'Iconos': '🔹',
+  'Fondos': '🌈',
+  'PSD': '📐',
+  'AI': '✒️',
+  'Figma': '🎯',
+  'Sketch': '💎',
+  'After Effects': '🎬',
+  'Photoshop': '🖼️',
+  'Illustrator': '✏️',
+}
+
 export default function ProductsClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -21,14 +44,17 @@ export default function ProductsClient() {
   const [tag, setTag] = useState(searchParams.get('tag') || '')
   const [sort, setSort] = useState(searchParams.get('sort') || 'newest')
   const [page, setPage] = useState<number>(parseInt(searchParams.get('page') || '1'))
-  const [availableTags, setAvailableTags] = useState<string[]>([])
+  const [availableTags, setAvailableTags] = useState<TagCount[]>([])
 
   useEffect(() => {
-    fetch('/api/admin/tags')
+    fetch('/api/tags')
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setAvailableTags(data.map((t: { name: string }) => t.name))
+          setAvailableTags(data.map((t: { name: string; count: number }) => ({
+            name: t.name,
+            count: t.count,
+          })))
         }
       })
       .catch(() => {})
@@ -62,6 +88,7 @@ export default function ProductsClient() {
           </div>
         </div>
 
+        {/* Search + Sort */}
         <form onSubmit={handleSearch} className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -74,33 +101,6 @@ export default function ProductsClient() {
               aria-label="Buscar productos"
             />
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                {tag || 'Todas las categorías'}
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className={tag === '' ? 'bg-accent' : ''}
-                onClick={() => setTag('')}
-              >
-                Todas las categorías
-              </DropdownMenuItem>
-              {availableTags.map((t) => (
-                <DropdownMenuItem
-                  key={t}
-                  className={tag === t ? 'bg-accent' : ''}
-                  onClick={() => setTag(t)}
-                >
-                  {t}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -125,6 +125,46 @@ export default function ProductsClient() {
             </Button>
           )}
         </form>
+
+        {/* Category tags */}
+        {availableTags.length > 0 && (
+          <div className="mt-6 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 min-w-max pb-2">
+              <button
+                onClick={() => setTag('')}
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                  tag === ''
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card text-card-foreground hover:border-primary/50 hover:bg-primary/5'
+                }`}
+              >
+                Todos
+              </button>
+              {availableTags.map((t) => {
+                const emoji = categoryEmoji[t.name] || '📁'
+                return (
+                  <button
+                    key={t.name}
+                    onClick={() => setTag(t.name)}
+                    className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                      tag === t.name
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-card text-card-foreground hover:border-primary/50 hover:bg-primary/5'
+                    }`}
+                  >
+                    <span>{emoji}</span>
+                    {t.name}
+                    {t.count > 0 && (
+                      <span className={`ml-1 text-xs ${tag === t.name ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                        {t.count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8">
           <ProductsList
@@ -234,32 +274,36 @@ function ProductsList({
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} hasSubscription={hasSubscription} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            hasSubscription={hasSubscription}
+          />
         ))}
       </div>
 
       {totalPages > 1 && (
-        <nav aria-label="Paginación" className="mt-8 flex items-center justify-center gap-2">
+        <div className="mt-8 flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={page === 1}
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
           >
             Anterior
           </Button>
           <span className="text-sm text-muted-foreground">
-            Página {page} de {totalPages}
+            Pagina {page} de {totalPages}
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
           >
             Siguiente
           </Button>
-        </nav>
+        </div>
       )}
     </>
   )
