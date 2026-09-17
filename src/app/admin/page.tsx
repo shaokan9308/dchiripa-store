@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { requireAdmin } from '@/lib/session'
+import { requireServerAdmin } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Package, Users, CreditCard, DollarSign, TrendingUp, ShoppingBag, Download, Activity, ArrowRight } from 'lucide-react'
@@ -9,11 +9,8 @@ import { Badge } from '@/components/ui/badge'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboard() {
-  try {
-    await requireAdmin()
-  } catch {
-    redirect('/auth/login')
-  }
+  const admin = await requireServerAdmin()
+  if (!admin) redirect('/auth/login')
 
   const now = new Date()
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)

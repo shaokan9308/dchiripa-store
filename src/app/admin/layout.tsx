@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { requireAdmin } from '@/lib/session'
+import { requireServerAdmin } from '@/lib/session'
 import AdminLayoutClient from './layout-client'
 
 export default async function AdminLayout({
@@ -7,11 +7,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  try {
-    await requireAdmin()
-  } catch {
-    redirect('/auth/login')
-  }
+  const admin = await requireServerAdmin()
+  if (!admin) redirect('/auth/login')
 
   return <AdminLayoutClient>{children}</AdminLayoutClient>
 }

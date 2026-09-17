@@ -30,3 +30,22 @@ export async function requireAdmin(request: Request) {
 
   return { session, user, error: null }
 }
+
+export async function getServerSession() {
+  try {
+    const session = await auth.api.getSession({ headers: new Headers() })
+    return session
+  } catch {
+    return null
+  }
+}
+
+export async function requireServerAdmin() {
+  const session = await getServerSession()
+  if (!session) return null
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+  if (!user || user.role !== 'admin') return null
+
+  return { session, user }
+}

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { requireAdmin } from '@/lib/session'
+import { requireServerAdmin } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,11 +10,8 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminProductsPage() {
-  try {
-    await requireAdmin()
-  } catch {
-    redirect('/auth/login')
-  }
+  const admin = await requireServerAdmin()
+  if (!admin) redirect('/auth/login')
 
   const products = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
