@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Download, Layers, Shield, Star, Zap, Users, MessageCircle, Palette, PenTool, Monitor, Film } from 'lucide-react'
+import { ArrowRight, Download, Shield, Zap, PenTool, Monitor, Film, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { prisma } from '@/lib/prisma'
@@ -45,11 +45,25 @@ async function getCategories() {
   }
 }
 
-async function getProductCount() {
+async function getUniqueFormats() {
   try {
-    return await prisma.product.count({ where: { isActive: true } })
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      select: { tags: true },
+    })
+
+    const formatSet = new Set<string>()
+    for (const product of products) {
+      for (const tag of product.tags) {
+        if (['PSD', 'AI', 'Figma', 'Sketch', 'After Effects', 'XD', 'Canva'].includes(tag)) {
+          formatSet.add(tag)
+        }
+      }
+    }
+
+    return Array.from(formatSet)
   } catch {
-    return 0
+    return []
   }
 }
 
@@ -61,23 +75,23 @@ const categoryCopy: Record<string, { emoji: string; tagline: string }> = {
   'Branding': { emoji: '🎨', tagline: 'Templates de identidad visual que hacen lucir tu marca profesional desde el dia uno' },
   'Social Media': { emoji: '📱', tagline: 'Publicaciones que detienen el scroll. Editables en Canva y Figma' },
   'UI/UX': { emoji: '🖥️', tagline: 'UI Kits y wireframes para interfaces que los usuarios aman' },
-  'Mockups': { emoji: '📦', tagline: 'Presenta tus diseños como productos terminados. Realismo que impresiona' },
+  'Mockups': { emoji: '📦', tagline: 'Presenta tus disenos como productos terminados. Realismo que impresiona' },
   'Ilustracion': { emoji: '✏️', tagline: 'Ilustraciones vectoriales listas para usar en cualquier proyecto' },
-  'Tipografia': { emoji: '🔤', tagline: 'Fuentes y composiciones tipograficas que dan personalidad a tus diseños' },
+  'Tipografia': { emoji: '🔤', tagline: 'Fuentes y composiciones tipograficas que dan personalidad a tus disenos' },
   'Iconos': { emoji: '🔹', tagline: 'Sets de iconos consistentes para interfaces y presentaciones' },
-  'Fondos': { emoji: '🌈', tagline: 'Texturas, gradientes y patrones que elevan cualquier diseño' },
+  'Fondos': { emoji: '🌈', tagline: 'Texturas, gradientes y patrones que elevan cualquier diseno' },
 }
 
 const features = [
   {
     icon: Monitor,
     title: 'Photoshop & Illustrator',
-    description: 'Acceso a archivos PSD y AI completamente editables. Capas organizadas, listos para personalizar.',
+    description: 'Archivos PSD y AI completamente editables. Capas organizadas, listos para personalizar.',
   },
   {
     icon: PenTool,
     title: 'Figma & Sketch',
-    description: 'Componentes y estilos de diseño modernos. Compatibles con los flujos de trabajo mas actuales.',
+    description: 'Componentes y estilos de diseno modernos. Compatibles con los flujos de trabajo mas actuales.',
   },
   {
     icon: Film,
@@ -101,70 +115,33 @@ const features = [
   },
 ]
 
-const testimonials = [
-  {
-    quote: 'La suscripcion me ha ahorrado cientos de horas. Los UI Kits son de una calidad increible.',
-    author: 'Ana Martinez',
-    role: 'UI Designer Freelance',
-    platform: 'Behance',
-    avatar: 'AM',
-  },
-  {
-    quote: 'Los mockups de branding son mi recurso favorito. Presentaciones profesionales en minutos.',
-    author: 'Carlos Mendez',
-    role: 'Director Creativo',
-    platform: 'Instagram',
-    avatar: 'CM',
-  },
-  {
-    quote: 'Mejor inversion del ano. Acceso instantaneo a archivos que uso en cada proyecto de cliente.',
-    author: 'Laura Puerto',
-    role: 'Disenadora Grafica',
-    platform: 'Dribbble',
-    avatar: 'LP',
-  },
-]
-
-const communityMembers = [
-  { name: 'Pedro R.', message: 'Acabo de descargar un UI Kit increible para mi nuevo proyecto' },
-  { name: 'Sofia L.', message: 'Las plantillas de After Effects son perfectas para mis videos' },
-  { name: 'Miguel A.', message: 'Alguien ha probado los templates de Figma? Estan genial' },
-]
-
 export default async function HomePage() {
-  const [products, categories, productCount] = await Promise.all([
+  const [products, categories, formats] = await Promise.all([
     getFeaturedProducts(),
     getCategories(),
-    getProductCount(),
+    getUniqueFormats(),
   ])
 
-  const displayCount = productCount > 0 ? productCount : 2500
+  const heroProduct = products[0]
+  const gridProducts = products.slice(1, 5)
 
   return (
     <div className="flex flex-col">
-      {/* Hero — big number + product showcase */}
-      <section aria-label="Presentacion" className="relative border-b bg-muted/30">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-        </div>
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Hero — product showcase */}
+      <section aria-label="Presentacion" className="border-b">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
-            {/* Left: copy + big number */}
+            {/* Left: copy */}
             <div className="flex flex-col justify-center">
-              <div className="mb-6">
-                <span className="text-6xl font-bold tracking-tight text-primary sm:text-7xl lg:text-8xl" style={{ letterSpacing: '-0.03em' }}>
-                  {displayCount.toLocaleString('es-ES')}+
-                </span>
-                <p className="mt-1 text-lg text-muted-foreground">archivos editables premium</p>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-6">
-                {['PSD', 'AI', 'Figma', 'Sketch', 'After Effects', 'XD'].map((format) => (
-                  <Badge key={format} variant="secondary" className="text-xs font-medium">
-                    {format}
-                  </Badge>
-                ))}
-              </div>
+              {formats.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {formats.map((format) => (
+                    <Badge key={format} variant="secondary" className="text-xs font-medium">
+                      {format}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl" style={{ textWrap: 'balance', letterSpacing: '-0.02em' }}>
                 Archivos editables para creativos que van rapido
               </h1>
@@ -196,96 +173,112 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Right: featured products */}
-            {products.length > 0 && (
-              <>
-                {/* Mobile: horizontal scroll strip */}
-                <div className="flex gap-3 overflow-x-auto pb-2 lg:hidden">
-                  {products.slice(0, 4).map((product) => (
-                    <Link
-                      key={product.id}
-                      href={`/productos/${product.slug}`}
-                      className="group relative shrink-0 w-48 overflow-hidden rounded-lg border bg-muted transition-all hover:shadow-lg"
-                    >
-                      <div className="relative aspect-square">
-                        <Image
-                          src={product.images[0] || '/placeholder-product.jpg'}
-                          alt={product.name}
-                          fill
-                          sizes="192px"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                      <div className="p-2">
-                        <p className="text-sm font-medium truncate">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatPrice(product.price, product.currency)}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+            {/* Right: hero product + grid */}
+            {heroProduct && (
+              <div className="relative">
+                {/* Main featured product */}
+                <Link
+                  href={`/productos/${heroProduct.slug}`}
+                  className="group relative block overflow-hidden rounded-xl bg-muted"
+                >
+                  <div className="relative aspect-[4/3]">
+                    <Image
+                      src={heroProduct.images[0] || '/placeholder-product.jpg'}
+                      alt={heroProduct.name}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+                    <p className="text-lg font-semibold text-white">{heroProduct.name}</p>
+                    <p className="text-sm text-white/80">{formatPrice(heroProduct.price, heroProduct.currency)}</p>
+                  </div>
+                </Link>
 
-                {/* Desktop: grid */}
-                <div className="relative hidden lg:block">
-                  <div className="grid grid-cols-2 gap-3">
-                    {products.slice(0, 4).map((product, i) => (
+                {/* Small grid below */}
+                {gridProducts.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    {gridProducts.map((product) => (
                       <Link
                         key={product.id}
                         href={`/productos/${product.slug}`}
-                        className={`group relative overflow-hidden rounded-lg border bg-muted transition-all hover:shadow-lg ${
-                          i === 0 ? 'row-span-2 aspect-[3/4]' : 'aspect-square'
-                        }`}
+                        className="group relative overflow-hidden rounded-lg bg-muted transition-all hover:shadow-md"
                       >
-                        <Image
-                          src={product.images[0] || '/placeholder-product.jpg'}
-                          alt={product.name}
-                          fill
-                          sizes={i === 0 ? '(max-width: 1024px) 50vw, 33vw' : '(max-width: 1024px) 25vw, 17vw'}
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-sm font-medium text-white truncate">{product.name}</p>
-                          <p className="text-xs text-white/80">{formatPrice(product.price, product.currency)}</p>
+                        <div className="relative aspect-square">
+                          <Image
+                            src={product.images[0] || '/placeholder-product.jpg'}
+                            alt={product.name}
+                            fill
+                            sizes="150px"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                          <p className="text-xs font-medium text-white truncate">{product.name}</p>
                         </div>
                       </Link>
                     ))}
                   </div>
-                </div>
-              </>
+                )}
+              </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Features — specific tools */}
-      <section aria-label=" Herramientas incluidas" className="border-b">
+      {/* Features — visual list */}
+      <section aria-label="Herramientas incluidas" className="border-b bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-          <div className="flex flex-col gap-2 mb-10">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Todo lo que necesitas, en un solo lugar</h2>
-            <p className="text-muted-foreground">Archivos compatibles con las herramientas que ya usas</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-            {features.map((feature) => (
-              <div key={feature.title} className="flex flex-col gap-3 rounded-lg border p-5 transition-all hover:border-primary/50 hover:bg-primary/5">
-                <feature.icon className="h-6 w-6 text-primary" aria-hidden="true" />
-                <h3 className="font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl mb-4">Compatible con las herramientas que usas</h2>
+              <p className="text-muted-foreground mb-8">Archivos listos para tus proyectos. Sin conversiones, sin complicaciones.</p>
+              <div className="space-y-6">
+                {features.slice(0, 3).map((feature) => (
+                  <div key={feature.title} className="flex gap-4 items-start">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <feature.icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <Link href="/productos">
-              <Button variant="outline" className="gap-2">
-                Explorar todo el catalogo
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Ventajas de la suscripcion</h3>
+              <div className="space-y-4">
+                {features.slice(3).map((feature) => (
+                  <div key={feature.title} className="flex gap-4 items-start">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <feature.icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8">
+                <Link href="/precios">
+                  <Button variant="outline" className="gap-2">
+                    Ver planes y precios
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Categories — visual grid with emotional copy */}
-      <section aria-label="Categorias populares" className="border-b bg-muted/30">
+      <section aria-label="Categorias populares" className="border-b">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
           <div className="flex flex-col gap-2 mb-10">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Explora por categoria</h2>
@@ -294,7 +287,7 @@ export default async function HomePage() {
           {categories.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {categories.map((category) => {
-                const copy = categoryCopy[category.name] || { emoji: '📁', tagline: `${category.count} archivos disponibles para tu proximo proyecto` }
+                const copy = categoryCopy[category.name] || { emoji: '📁', tagline: `${category.count} archivos disponibles` }
                 return (
                   <Link
                     key={category.name}
@@ -317,111 +310,32 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Mid-page CTA */}
-      <section className="border-b">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <p className="text-muted-foreground mb-4">Ya sabes lo que ofrecemos. Ahora mira los archivos.</p>
-          <Link href="/productos">
-            <Button size="lg" className="gap-2">
-              Explorar catalogo
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Testimonials — with avatars and platform */}
-      <section aria-label="Testimonios" className="border-b">
+      {/* How it works — simple steps */}
+      <section aria-label="Como funciona" className="border-b bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-          <div className="flex flex-col gap-2 mb-12">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Lo que dicen nuestros creativos</h2>
-            <p className="text-muted-foreground">Miles de disenadores confian en Dchiripa Store</p>
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Como funciona</h2>
+            <p className="mt-2 text-muted-foreground">Tres pasos para empezar a crear</p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
-            {testimonials.map((testimonial, i) => (
-              <figure key={i} className="flex flex-col gap-4 rounded-lg border p-6">
-                <div className="flex gap-0.5" role="img" aria-label="5 de 5 estrellas">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="h-4 w-4 fill-warning text-warning" aria-hidden="true" />
-                  ))}
+            {[
+              { step: '1', title: 'Explora', description: 'Busca entre miles de archivos editables por categoria, herramienta o estilo.' },
+              { step: '2', title: 'Elige', description: 'Compra individualmente o suscribete para acceso ilimitado a todo el catalogo.' },
+              { step: '3', title: 'Crea', description: 'Descarga los archivos y empieza a personalizar en tu herramienta favorita.' },
+            ].map((item) => (
+              <div key={item.step} className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
+                  {item.step}
                 </div>
-                <blockquote className="text-muted-foreground leading-relaxed">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </blockquote>
-                <figcaption className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{testimonial.author}</p>
-                    <p className="text-xs text-muted-foreground">{testimonial.role} &middot; {testimonial.platform}</p>
-                  </div>
-                </figcaption>
-              </figure>
+                <h3 className="font-semibold mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Community — Discord/Telegram style */}
-      <section aria-label="Comunidad" className="border-b bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-          <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-center">
-            <div>
-              <Badge variant="secondary" className="mb-4 w-fit text-xs">
-                <Users className="mr-1.5 h-3 w-3" />
-                +500 miembros activos
-              </Badge>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl mb-4">
-                Unete a nuestra comunidad
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Conecta con otros disenadores, comparte tu trabajo y obtiene inspiracion diaria. Chat activo 24/7.
-              </p>
-              <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mb-8">
-                <span className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  Chat en tiempo real
-                </span>
-                <span className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Recursos exclusivos
-                </span>
-                <span className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Feedback de diseño
-                </span>
-              </div>
-              <Link href="https://discord.gg/tu-servidor" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" className="gap-2">
-                  Unirse al Discord
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="rounded-lg border bg-card p-6 space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                127 miembros en linea
-              </div>
-              {communityMembers.map((member, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                    {member.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{member.name}</p>
-                    <p className="text-sm text-muted-foreground">{member.message}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
+      {/* CTA */}
       <section aria-label="Llamada a la accion" className="bg-primary text-primary-foreground">
         <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:py-20">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ letterSpacing: '-0.02em' }}>
