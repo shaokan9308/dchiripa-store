@@ -61,7 +61,7 @@ export default async function AdminDashboard() {
     }),
   ])
 
-  const formatCurrency = (amount: number) => `€${(amount / 100).toFixed(2)}`
+  const formatCurrency = (amount: number) => `$${(amount / 100).toFixed(2)} MXN`
 
   return (
     <div className="space-y-8">

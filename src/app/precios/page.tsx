@@ -61,7 +61,7 @@ const PLANS = [
       { name: 'Acceso anticipado a novedades', included: true },
       { name: 'Soporte dedicado', included: true },
     ],
-    cta: 'Suscribirse anualmente (ahorra 38€)',
+    cta: 'Suscribirse anualmente (ahorra $760 MXN)',
     variant: 'default' as const,
     popular: true,
   },

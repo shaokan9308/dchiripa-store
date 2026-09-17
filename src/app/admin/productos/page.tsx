@@ -49,7 +49,7 @@ export default async function AdminProductsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                <p>Precio: €{(product.price / 100).toFixed(2)}</p>
+                <p>Precio: ${(product.price / 100).toFixed(2)} MXN</p>
                 <p>Archivos: {product.fileKeys.length}</p>
                 <p>Compras: {product._count.purchases} · Descargas: {product._count.downloads}</p>
               </div>

@@ -32,7 +32,7 @@ interface Countdown {
 const PLANS = {
   monthly: {
     name: 'Mensual',
-    price: 1900, // 19€
+    price: 1900, // $19.00 MXN
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || 'price_monthly',
     features: [
       'Descargas ilimitadas',
@@ -44,7 +44,7 @@ const PLANS = {
   },
   yearly: {
     name: 'Anual',
-    price: 19000, // 190€ (2 meses gratis)
+    price: 19000, // $190.00 MXN (2 meses gratis)
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY || 'price_yearly',
     features: [
       'Todo lo del plan mensual',
