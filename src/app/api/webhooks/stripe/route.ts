@@ -1,7 +1,7 @@
 import { constructStripeEvent, stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendPurchaseConfirmationEmail, sendSubscriptionConfirmationEmail } from '@/lib/email'
-import { apiSuccess, apiError, escapeHtml } from '@/lib/api-response'
+import { apiSuccess, apiError } from '@/lib/api-response'
 import Stripe from 'stripe'
 
 export async function POST(request: Request) {
@@ -88,7 +88,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
     if (user?.email) {
       const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/suscripcion`
-      await sendSubscriptionConfirmationEmail(user.email, escapeHtml(planName), portalUrl)
+      await sendSubscriptionConfirmationEmail(user.email, planName, portalUrl)
     }
   } else if (mode === 'purchase' && productId) {
     try {
@@ -107,7 +107,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
       if (user?.email) {
         const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/download/${productId}`
-        await sendPurchaseConfirmationEmail(user.email, escapeHtml(purchase.product.name), downloadUrl)
+        await sendPurchaseConfirmationEmail(user.email, purchase.product.name, downloadUrl)
       }
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {

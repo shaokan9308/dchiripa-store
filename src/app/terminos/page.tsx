@@ -31,7 +31,7 @@ export default function TerminosPage() {
 
           <h2 className="text-lg font-semibold">4. Compras y pagos</h2>
           <p>
-            Los precios están mostrados en euros (EUR). Los pagos se procesan a través de Stripe.
+            Los precios están mostrados en pesos mexicanos (MXN). Los pagos se procesan a través de Stripe.
             Las suscripciones se renuevan automáticamente al final de cada período de facturación.
             Puedes cancelar tu suscripción en cualquier momento desde tu panel de usuario.
           </p>

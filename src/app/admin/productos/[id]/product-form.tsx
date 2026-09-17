@@ -272,7 +272,7 @@ export default function ProductForm({ product }: { product?: Product }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="price">Precio (EUR)</Label>
+            <Label htmlFor="price">Precio (MXN)</Label>
             <Input
               id="price"
               type="number"

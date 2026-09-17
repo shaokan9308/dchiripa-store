@@ -1,57 +1,62 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { apiSuccess, apiInternalError } from '@/lib/api-response'
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '12')))
-  const tag = searchParams.get('tag')
-  const search = searchParams.get('search')?.slice(0, 200)
-  const sort = searchParams.get('sort') || 'newest'
+  try {
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '12')))
+    const tag = searchParams.get('tag')
+    const search = searchParams.get('search')?.slice(0, 200)
+    const sort = searchParams.get('sort') || 'newest'
 
-  const orderBy = (() => {
-    switch (sort) {
-      case 'price_asc': return { price: 'asc' as const }
-      case 'price_desc': return { price: 'desc' as const }
-      case 'name': return { name: 'asc' as const }
-      case 'oldest': return { createdAt: 'asc' as const }
-      default: return { createdAt: 'desc' as const }
+    const orderBy = (() => {
+      switch (sort) {
+        case 'price_asc': return { price: 'asc' as const }
+        case 'price_desc': return { price: 'desc' as const }
+        case 'name': return { name: 'asc' as const }
+        case 'oldest': return { createdAt: 'asc' as const }
+        default: return { createdAt: 'desc' as const }
+      }
+    })()
+
+    const where = {
+      isActive: true,
+      ...(tag && { tags: { has: tag } }),
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }),
     }
-  })()
 
-  const where = {
-    isActive: true,
-    ...(tag && { tags: { has: tag } }),
-    ...(search && {
-      OR: [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { description: { contains: search, mode: 'insensitive' as const } },
-      ],
-    }),
-  }
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy,
+        select: {
+          id: true, name: true, slug: true, description: true,
+          price: true, currency: true, images: true, tags: true,
+          accessType: true, isActive: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      prisma.product.count({ where }),
+    ])
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy,
-      select: {
-        id: true, name: true, slug: true, description: true,
-        price: true, currency: true, images: true, tags: true,
-        accessType: true, isActive: true, createdAt: true, updatedAt: true,
+    return apiSuccess({
+      products,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-    }),
-    prisma.product.count({ where }),
-  ])
-
-  return NextResponse.json({
-    products,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  })
+    })
+  } catch (error) {
+    console.error('[PRODUCTS_GET]', error)
+    return apiInternalError()
+  }
 }

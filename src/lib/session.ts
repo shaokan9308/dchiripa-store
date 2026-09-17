@@ -1,6 +1,7 @@
 import { auth } from './auth'
 import { prisma } from './prisma'
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 export async function getSession(request: Request) {
   try {
@@ -33,7 +34,13 @@ export async function requireAdmin(request: Request) {
 
 export async function getServerSession() {
   try {
-    const session = await auth.api.getSession({ headers: new Headers() })
+    const cookieStore = await cookies()
+    const headers = new Headers()
+    const cookieHeader = cookieStore.toString()
+    if (cookieHeader) {
+      headers.set('cookie', cookieHeader)
+    }
+    const session = await auth.api.getSession({ headers })
     return session
   } catch {
     return null

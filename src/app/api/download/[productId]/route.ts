@@ -1,4 +1,3 @@
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getSignedDownloadUrl } from '@/lib/r2'
 import { requireAuth } from '@/lib/session'

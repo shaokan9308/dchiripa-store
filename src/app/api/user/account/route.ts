@@ -1,50 +1,51 @@
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getStripe } from '@/lib/stripe'
-import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/session'
+import { validateRequest, passwordSchema } from '@/lib/validations'
+import { apiSuccess, apiError, apiInternalError } from '@/lib/api-response'
 import bcrypt from 'bcryptjs'
 
 export async function DELETE(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-  }
+  try {
+    const { session, error } = await requireAuth(request)
+    if (error) return error
 
-  const { password } = await request.json()
-  if (!password) {
-    return NextResponse.json({ error: 'Contrasena requerida para eliminar cuenta' }, { status: 400 })
-  }
+    const body = await request.json()
+    const validation = validateRequest(passwordSchema.pick({ currentPassword: true }), body)
+    if (!validation.success) return apiError(validation.error)
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { password: true },
-  })
+    const { currentPassword } = validation.data
 
-  if (!user?.password) {
-    return NextResponse.json({ error: 'Cuenta OAuth, no se puede eliminar desde aqui' }, { status: 400 })
-  }
+    const user = await prisma.user.findUnique({
+      where: { id: session!.user.id },
+      select: { password: true },
+    })
 
-  const isValid = await bcrypt.compare(password, user.password)
-  if (!isValid) {
-    return NextResponse.json({ error: 'Contrasena incorrecta' }, { status: 401 })
-  }
+    if (!user?.password) return apiError('Cuenta OAuth, no se puede eliminar desde aqui')
 
-  const userId = session.user.id
+    const isValid = await bcrypt.compare(currentPassword, user.password)
+    if (!isValid) return apiError('Contrasena incorrecta', 401)
 
-  const subscription = await prisma.subscription.findFirst({
-    where: { userId },
-    select: { stripeSubscriptionId: true },
-  })
+    const userId = session!.user.id
 
-  if (subscription?.stripeSubscriptionId) {
-    try {
-      await getStripe().subscriptions.cancel(subscription.stripeSubscriptionId)
-    } catch {
-      // Continue even if Stripe cancel fails
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId },
+      select: { stripeSubscriptionId: true },
+    })
+
+    if (subscription?.stripeSubscriptionId) {
+      try {
+        await getStripe().subscriptions.cancel(subscription.stripeSubscriptionId)
+      } catch {
+        // Continue even if Stripe cancel fails
+      }
     }
+
+    await prisma.user.delete({ where: { id: userId } })
+
+    return apiSuccess({ ok: true })
+  } catch (err) {
+    console.error('[ACCOUNT_DELETE]', err)
+    return apiInternalError()
   }
-
-  await prisma.user.delete({ where: { id: userId } })
-
-  return NextResponse.json({ success: true })
 }
