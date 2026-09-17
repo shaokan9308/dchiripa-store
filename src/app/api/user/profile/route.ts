@@ -1,23 +1,25 @@
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/session'
+import { validateRequest, profileSchema } from '@/lib/validations'
+import { apiSuccess, apiError, apiInternalError } from '@/lib/api-response'
 
 export async function PATCH(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+  try {
+    const { session, error } = await requireAuth(request)
+    if (error) return error
+
+    const body = await request.json()
+    const validation = validateRequest(profileSchema, body)
+    if (!validation.success) return apiError(validation.error)
+
+    await prisma.user.update({
+      where: { id: session!.user.id },
+      data: validation.data,
+    })
+
+    return apiSuccess({ ok: true })
+  } catch (err) {
+    console.error('[PROFILE_UPDATE]', err)
+    return apiInternalError()
   }
-
-  const { name } = await request.json()
-
-  if (!name || name.trim().length < 2) {
-    return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 })
-  }
-
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { name: name.trim() },
-  })
-
-  return NextResponse.json({ success: true })
 }

@@ -30,6 +30,12 @@ function getClientIp(request: NextRequest): string {
     'unknown'
 }
 
+function getSessionToken(request: NextRequest): string | null {
+  const cookieHeader = request.headers.get('cookie') || ''
+  const match = cookieHeader.match(/(?:__Secure-)?better-auth\.session_token=([^;]+)/)
+  return match ? match[1] : null
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = getClientIp(request)
@@ -58,20 +64,14 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')
   const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
 
-  const cookieHeader = request.headers.get('cookie') || ''
-  const hasSession =
-    (cookieHeader.includes('__Secure-better-auth.session_token=') ||
-    cookieHeader.includes('better-auth.session_token=')) &&
-    (() => {
-      const match = cookieHeader.match(/(?:__Secure-)?better-auth\.session_token=([^;]+)/)
-      return match && match[1].length >= 32
-    })()
+  const sessionToken = getSessionToken(request)
+  const hasValidSession = sessionToken && sessionToken.length >= 32 && sessionToken.length <= 256
 
-  if (isAuthRoute && hasSession) {
+  if (isAuthRoute && hasValidSession) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  if (isProtectedRoute && !hasSession) {
+  if (isProtectedRoute && !hasValidSession) {
     const loginUrl = new URL('/auth/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)

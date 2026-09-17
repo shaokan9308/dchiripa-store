@@ -1,41 +1,29 @@
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
 import { uploadFile, deleteFile, listFiles } from '@/lib/r2'
-import { NextResponse } from 'next/server'
-
-async function requireAdminSession(request: Request) {
-  try {
-    const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) return null
-    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (currentUser?.role !== 'admin') return null
-    return session
-  } catch {
-    return null
-  }
-}
+import { requireAdmin } from '@/lib/session'
+import { apiSuccess, apiError, apiInternalError, apiNotFound } from '@/lib/api-response'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdminSession(request)
-    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const { id } = await params
-    const product = await prisma.product.findUnique({ where: { id }, select: { fileKeys: true } })
-    if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const product = await prisma.product.findUnique({ where: { id }, select: { fileKeys: true, slug: true } })
+    if (!product) return apiNotFound('Producto')
 
-    const r2Files = await listFiles(`products/`)
+    const r2Files = await listFiles(`products/${product.slug}/`)
     const productFiles = r2Files
       .filter(f => f.Key && product.fileKeys.includes(f.Key))
       .map(f => ({ key: f.Key!, size: f.Size || 0, lastModified: f.LastModified }))
 
-    return NextResponse.json({ files: productFiles })
+    return apiSuccess({ files: productFiles })
   } catch (e) {
     console.error('[FILES GET]', e)
-    return NextResponse.json({ files: [] })
+    return apiSuccess({ files: [] })
   }
 }
 
@@ -44,8 +32,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdminSession(request)
-    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const { id } = await params
 
@@ -54,18 +42,16 @@ export async function POST(
       const formData = await request.formData()
       file = formData.get('file') as File | null
     } catch {
-      return NextResponse.json({ error: 'No se pudo leer el FormData' }, { status: 400 })
+      return apiError('No se pudo leer el FormData')
     }
 
-    if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
+    if (!file) return apiError('Archivo requerido')
 
     const maxSize = 50 * 1024 * 1024
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: 'Archivo muy grande (max 50MB)' }, { status: 400 })
-    }
+    if (file.size > maxSize) return apiError('Archivo muy grande (max 50MB)')
 
     const product = await prisma.product.findUnique({ where: { id } })
-    if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    if (!product) return apiNotFound('Producto')
 
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 200)
     const ext = safeName.split('.').pop() || ''
@@ -79,10 +65,10 @@ export async function POST(
       data: { fileKeys: { push: key } },
     })
 
-    return NextResponse.json({ key })
+    return apiSuccess({ key })
   } catch (e) {
     console.error('[FILES POST]', e)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return apiInternalError()
   }
 }
 
@@ -91,16 +77,24 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdminSession(request)
-    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
-    if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
+    if (!key) return apiError('Key requerida')
 
-    const product = await prisma.product.findUnique({ where: { id } })
-    if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const product = await prisma.product.findUnique({ where: { id }, select: { fileKeys: true, slug: true } })
+    if (!product) return apiNotFound('Producto')
+
+    if (!key.startsWith(`products/${product.slug}/`)) {
+      return apiError('Key no pertenece a este producto')
+    }
+
+    if (!product.fileKeys.includes(key)) {
+      return apiError('Archivo no encontrado en este producto')
+    }
 
     await deleteFile(key)
 
@@ -109,9 +103,9 @@ export async function DELETE(
       data: { fileKeys: product.fileKeys.filter(k => k !== key) },
     })
 
-    return NextResponse.json({ ok: true })
+    return apiSuccess({ ok: true })
   } catch (e) {
     console.error('[FILES DELETE]', e)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return apiInternalError()
   }
 }

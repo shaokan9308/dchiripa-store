@@ -1,14 +1,11 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/session'
+import { apiSuccess, apiInternalError } from '@/lib/api-response'
 
 export async function GET(request: Request) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (currentUser?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
@@ -18,8 +15,9 @@ export async function GET(request: Request) {
       },
     })
 
-    return NextResponse.json(users)
+    return apiSuccess(users)
   } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    console.error('[USERS_GET]', error)
+    return apiInternalError()
   }
 }

@@ -1,32 +1,29 @@
 import { auth } from '@/lib/auth'
 import { getStripeSession, getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { validateRequest, checkoutSchema } from '@/lib/validations'
+import { apiSuccess, apiError, apiInternalError, apiNotFound } from '@/lib/api-response'
 
 export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-    }
+    if (!session) return apiError('No autenticado', 401)
 
-    const { productId, plan, mode } = await request.json()
+    const body = await request.json()
+    const validation = validateRequest(checkoutSchema, body)
+    if (!validation.success) return apiError(validation.error)
+
+    const { productId, plan, mode } = validation.data
 
     let priceId: string | undefined
     if (mode === 'subscription') {
-      if (plan === 'yearly') {
-        priceId = process.env.STRIPE_PRICE_YEARLY
-      } else {
-        priceId = process.env.STRIPE_PRICE_MONTHLY
-      }
+      priceId = plan === 'yearly'
+        ? process.env.STRIPE_PRICE_YEARLY
+        : process.env.STRIPE_PRICE_MONTHLY
     }
 
     if (mode === 'subscription' && !priceId) {
-      return NextResponse.json({ error: 'Plan de suscripcion invalido' }, { status: 400 })
-    }
-
-    if (!priceId && mode !== 'subscription') {
-      return NextResponse.json({ error: 'Modo invalido' }, { status: 400 })
+      return apiError('Plan de suscripcion invalido')
     }
 
     let customerId: string | undefined
@@ -53,44 +50,56 @@ export async function POST(request: Request) {
       metadata: {
         userId: session.user.id,
         productId: productId || '',
-        mode: mode || 'subscription',
+        mode,
       },
-      mode: mode || 'subscription',
+      mode,
     }
 
-    if (mode === 'payment' && productId) {
+    if (mode === 'purchase' && productId) {
       const product = await prisma.product.findUnique({
         where: { id: productId },
-        select: { price: true, name: true, currency: true },
+        select: { price: true, name: true, currency: true, stripeProductId: true, stripePriceId: true },
       })
 
-      if (!product) {
-        return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 })
-      }
+      if (!product) return apiNotFound('Producto')
 
       const stripe = getStripe()
-      const stripeProduct = await stripe.products.create({
-        name: product.name,
-        metadata: { productId },
-      })
 
-      const stripePrice = await stripe.prices.create({
-        product: stripeProduct.id,
-        unit_amount: product.price,
-        currency: product.currency || 'mxn',
-      })
+      let finalPriceId = product.stripePriceId
+
+      if (!finalPriceId) {
+        const stripeProduct = await stripe.products.create({
+          name: product.name,
+          metadata: { productId },
+        })
+
+        const stripePrice = await stripe.prices.create({
+          product: stripeProduct.id,
+          unit_amount: product.price,
+          currency: product.currency || 'mxn',
+        })
+
+        await prisma.product.update({
+          where: { id: productId },
+          data: {
+            stripeProductId: stripeProduct.id,
+            stripePriceId: stripePrice.id,
+          },
+        })
+
+        finalPriceId = stripePrice.id
+      }
 
       stripeSessionParams = {
         ...stripeSessionParams,
-        priceId: stripePrice.id,
+        priceId: finalPriceId,
       }
     }
 
     const stripeSession = await getStripeSession(stripeSessionParams)
-
-    return NextResponse.json({ url: stripeSession.url })
+    return apiSuccess({ url: stripeSession.url })
   } catch (error) {
     console.error('[CHECKOUT]', error)
-    return NextResponse.json({ error: 'Error al crear sesion de pago' }, { status: 500 })
+    return apiInternalError('Error al crear sesion de pago')
   }
 }

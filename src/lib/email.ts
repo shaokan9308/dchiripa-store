@@ -10,7 +10,11 @@ function getResend() {
 }
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+}
+
+function escapeUrl(url: string): string {
+  return url.replace(/"/g, '%22').replace(/'/g, '%27').replace(/</g, '%3C').replace(/>/g, '%3E')
 }
 
 interface SendEmailParams {
@@ -21,9 +25,7 @@ interface SendEmailParams {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
-  if (!process.env.RESEND_API_KEY) {
-    return
-  }
+  if (!process.env.RESEND_API_KEY) return
 
   try {
     const client = getResend()
@@ -51,8 +53,8 @@ export async function sendPurchaseConfirmationEmail(
     html: `
       <h1>¡Gracias por tu compra!</h1>
       <p>Has adquirido <strong>${escapeHtml(productName)}</strong>.</p>
-      <p><a href="${downloadUrl}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Descargar archivo</a></p>
-      <p>El enlace de descarga expira en 24 horas. Puedes acceder a tus compras desde tu <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard">panel de usuario</a>.</p>
+      <p><a href="${escapeUrl(downloadUrl)}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Descargar archivo</a></p>
+      <p>El enlace de descarga expira en 24 horas. Puedes acceder a tus compras desde tu <a href="${escapeUrl(process.env.NEXT_PUBLIC_APP_URL || '')}/dashboard">panel de usuario</a>.</p>
     `,
   })
 }
@@ -68,7 +70,7 @@ export async function sendSubscriptionConfirmationEmail(
     html: `
       <h1>¡Suscripción activada!</h1>
       <p>Tu suscripción a <strong>${escapeHtml(planName)}</strong> está ahora activa.</p>
-      <p><a href="${portalUrl}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Gestionar suscripción</a></p>
+      <p><a href="${escapeUrl(portalUrl)}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Gestionar suscripción</a></p>
       <p>Desde el portal puedes actualizar tu método de pago, cambiar de plan o cancelar.</p>
     `,
   })

@@ -1,38 +1,34 @@
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
-import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/session'
+import { validateRequest, productSchema } from '@/lib/validations'
+import { apiSuccess, apiError, apiInternalError, apiNotFound } from '@/lib/api-response'
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (currentUser?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const { id } = await params
     const body = await request.json()
+    const validation = validateRequest(productSchema.partial(), body)
+    if (!validation.success) return apiError(validation.error)
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name: body.name,
-        slug: body.slug,
-        description: body.description,
-        price: body.price,
-        images: body.images,
-        tags: body.tags,
-        isActive: body.isActive,
-        accessType: body.accessType || 'purchase',
-      },
-    })
+    const existing = await prisma.product.findUnique({ where: { id } })
+    if (!existing) return apiNotFound('Producto')
 
-    return NextResponse.json(product)
+    if (validation.data.slug && validation.data.slug !== existing.slug) {
+      const slugExists = await prisma.product.findUnique({ where: { slug: validation.data.slug } })
+      if (slugExists) return apiError('Ya existe un producto con ese slug')
+    }
+
+    const product = await prisma.product.update({ where: { id }, data: validation.data })
+    return apiSuccess(product)
   } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    console.error('[PRODUCTS_UPDATE]', error)
+    return apiInternalError()
   }
 }
 
@@ -41,16 +37,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (currentUser?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const { id } = await params
+    const existing = await prisma.product.findUnique({ where: { id } })
+    if (!existing) return apiNotFound('Producto')
+
     await prisma.product.delete({ where: { id } })
-    return NextResponse.json({ ok: true })
+    return apiSuccess({ ok: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    console.error('[PRODUCTS_DELETE]', error)
+    return apiInternalError()
   }
 }

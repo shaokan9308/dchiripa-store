@@ -1,16 +1,14 @@
 import { constructStripeEvent, stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendPurchaseConfirmationEmail, sendSubscriptionConfirmationEmail } from '@/lib/email'
-import { NextResponse } from 'next/server'
+import { apiSuccess, apiError, escapeHtml } from '@/lib/api-response'
 import Stripe from 'stripe'
 
 export async function POST(request: Request) {
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
-  if (!signature) {
-    return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
-  }
+  if (!signature) return apiError('Firma faltante', 400)
 
   let event: Stripe.Event
 
@@ -18,7 +16,7 @@ export async function POST(request: Request) {
     event = constructStripeEvent(body, signature)
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    return apiError('Firma invalida', 400)
   }
 
   try {
@@ -46,10 +44,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ received: true })
+    return apiSuccess({ received: true })
   } catch (error) {
     console.error('Webhook handler error:', error)
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
+    return apiError('Webhook handler failed', 500)
   }
 }
 
@@ -90,30 +88,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
     if (user?.email) {
       const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/suscripcion`
-      await sendSubscriptionConfirmationEmail(user.email, planName, portalUrl)
+      await sendSubscriptionConfirmationEmail(user.email, escapeHtml(planName), portalUrl)
     }
-  } else if (mode === 'payment' && productId) {
-    const existingPurchase = await prisma.purchase.findFirst({
-      where: { stripeSessionId: session.id },
-    })
-    if (existingPurchase) return
+  } else if (mode === 'purchase' && productId) {
+    try {
+      const purchase = await prisma.purchase.create({
+        data: {
+          userId,
+          productId,
+          stripeSessionId: session.id,
+          amount: session.amount_total || 0,
+          currency: session.currency || 'mxn',
+          status: 'completed',
+        },
+        include: { product: true },
+      })
 
-    const purchase = await prisma.purchase.create({
-      data: {
-        userId,
-        productId,
-        stripeSessionId: session.id,
-        amount: session.amount_total || 0,
-        currency: session.currency || 'mxn',
-        status: 'completed',
-      },
-      include: { product: true },
-    })
-
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
-    if (user?.email) {
-      const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/download/${productId}`
-      await sendPurchaseConfirmationEmail(user.email, purchase.product.name, downloadUrl)
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+      if (user?.email) {
+        const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/download/${productId}`
+        await sendPurchaseConfirmationEmail(user.email, escapeHtml(purchase.product.name), downloadUrl)
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        return
+      }
+      throw error
     }
   }
 }

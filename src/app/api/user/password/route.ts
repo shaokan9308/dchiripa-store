@@ -1,44 +1,40 @@
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/session'
+import { validateRequest, passwordSchema } from '@/lib/validations'
+import { apiSuccess, apiError, apiInternalError } from '@/lib/api-response'
 import bcrypt from 'bcryptjs'
 
 export async function PATCH(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+  try {
+    const { session, error } = await requireAuth(request)
+    if (error) return error
+
+    const body = await request.json()
+    const validation = validateRequest(passwordSchema, body)
+    if (!validation.success) return apiError(validation.error)
+
+    const { currentPassword, newPassword } = validation.data
+
+    const user = await prisma.user.findUnique({
+      where: { id: session!.user.id },
+      select: { password: true },
+    })
+
+    if (!user?.password) return apiError('No se puede cambiar contrasena (cuenta OAuth)')
+
+    const isValid = await bcrypt.compare(currentPassword, user.password)
+    if (!isValid) return apiError('Contrasena actual incorrecta', 401)
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12)
+
+    await prisma.user.update({
+      where: { id: session!.user.id },
+      data: { password: hashedPassword },
+    })
+
+    return apiSuccess({ ok: true })
+  } catch (err) {
+    console.error('[PASSWORD_UPDATE]', err)
+    return apiInternalError()
   }
-
-  const { currentPassword, newPassword } = await request.json()
-
-  if (!currentPassword || !newPassword) {
-    return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
-  }
-
-  if (newPassword.length < 8) {
-    return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { password: true },
-  })
-
-  if (!user?.password) {
-    return NextResponse.json({ error: 'No se puede cambiar contraseña (cuenta OAuth)' }, { status: 400 })
-  }
-
-  const isValid = await bcrypt.compare(currentPassword, user.password)
-  if (!isValid) {
-    return NextResponse.json({ error: 'Contraseña actual incorrecta' }, { status: 401 })
-  }
-
-  const hashedPassword = await bcrypt.hash(newPassword, 12)
-
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { password: hashedPassword },
-  })
-
-  return NextResponse.json({ success: true })
 }

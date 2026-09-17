@@ -85,11 +85,16 @@ model Product {
   tags        String[]
   isActive    Boolean  @default(true)
   accessType  String   @default("purchase")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  stripeProductId String?
+  stripePriceId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   purchases   Purchase[]
   downloads   Download[]
+
+  @@index([isActive])
+  @@index([accessType])
 }
 
 model Subscription {
@@ -108,6 +113,7 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
 }
 
 model Purchase {

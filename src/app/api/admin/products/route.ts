@@ -1,32 +1,24 @@
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
-import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/session'
+import { validateRequest, productSchema } from '@/lib/validations'
+import { apiSuccess, apiError, apiInternalError } from '@/lib/api-response'
 
 export async function POST(request: Request) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (currentUser?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    const { error } = await requireAdmin(request)
+    if (error) return error
 
     const body = await request.json()
+    const validation = validateRequest(productSchema, body)
+    if (!validation.success) return apiError(validation.error)
 
-    const product = await prisma.product.create({
-      data: {
-        name: body.name,
-        slug: body.slug,
-        description: body.description,
-        price: body.price,
-        images: body.images || [],
-        tags: body.tags || [],
-        isActive: body.isActive ?? true,
-        accessType: body.accessType || 'purchase',
-      },
-    })
+    const existingSlug = await prisma.product.findUnique({ where: { slug: validation.data.slug } })
+    if (existingSlug) return apiError('Ya existe un producto con ese slug')
 
-    return NextResponse.json(product)
+    const product = await prisma.product.create({ data: validation.data })
+    return apiSuccess(product)
   } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    console.error('[PRODUCTS_CREATE]', error)
+    return apiInternalError()
   }
 }
