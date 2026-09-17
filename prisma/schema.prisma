@@ -79,7 +79,7 @@ model Product {
   slug        String   @unique
   description String   @db.Text
   price       Int
-  currency    String   @default("eur")
+  currency    String   @default("mxn")
   images      String[]
   fileKeys    String[]
   tags        String[]
@@ -116,7 +116,7 @@ model Purchase {
   productId     String
   stripeSessionId String? @unique
   amount        Int
-  currency      String   @default("eur")
+  currency      String   @default("mxn")
   status        String
   createdAt     DateTime @default(now())
 

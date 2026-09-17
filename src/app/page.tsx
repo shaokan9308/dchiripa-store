@@ -68,7 +68,7 @@ async function getUniqueFormats() {
 }
 
 function formatPrice(price: number, currency: string) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency }).format(price / 100)
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(price / 100)
 }
 
 const categoryCopy: Record<string, { emoji: string; tagline: string }> = {

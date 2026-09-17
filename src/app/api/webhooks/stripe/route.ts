@@ -104,7 +104,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         productId,
         stripeSessionId: session.id,
         amount: session.amount_total || 0,
-        currency: session.currency || 'eur',
+        currency: session.currency || 'mxn',
         status: 'completed',
       },
       include: { product: true },
